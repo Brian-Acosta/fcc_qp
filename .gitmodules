@@ -1,0 +1,6 @@
+[submodule "eigen"]
+	path = eigen
+	url = git@github.com:libigl/eigen.git
+[submodule "pybind11"]
+	path = pybind11
+	url = git@github.com:pybind/pybind11.git

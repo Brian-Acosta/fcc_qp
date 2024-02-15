@@ -1,0 +1,10 @@
+.DS_Store
+.vscode/
+.idea/
+cmake-build-debug/
+__pycache__/
+build/
+dist/
+*.egg-info/
+*.so
+/venv/
