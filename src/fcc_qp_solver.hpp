@@ -81,9 +81,9 @@ class FCCQPSolver {
   MatrixXd P_rho_; // Hessian of augmented lagrangian term
   VectorXd q_rho_; // augmented lagrangian cost linear term
 
-  MatrixXd M_kkt_;   // KKT matrix for admm update
-  MatrixXd M_kkt_eq_; // KKT matrix for presolve equality constrained qp
-  VectorXd b_kkt_;   // KKT right hand side
+  MatrixXd M_kkt_;     // KKT matrix for admm update
+  MatrixXd M_kkt_pre_; // KKT matrix for presolve equality constrained qp
+  VectorXd b_kkt_;     // KKT right hand side
 
   // Variables
   VectorXd kkt_sol_;      // primal and equality duals from stage 1 primal solve
@@ -93,9 +93,9 @@ class FCCQPSolver {
   VectorXd mu_z_;         // Dual for z = z_bar constraint
   VectorXd mu_lambda_c_;  // Dual for lambda_c = lambda_c_bar constraint
 
-  // SVDs
-  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_svd_;
-  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_eq_svd_;
+  // Decompositions
+  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_factorization_;
+  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_;
 
 
   // residuals

@@ -37,9 +37,9 @@ FCCQPSolver::FCCQPSolver(int num_vars, int num_equality_constraints,
 
   int N = n_vars_ + n_eq_;
   M_kkt_ = MatrixXd::Zero(N,N);
-  M_kkt_eq_ = MatrixXd::Zero(N,N);
-  M_kkt_svd_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
-  M_kkt_eq_svd_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
+  M_kkt_pre_ = MatrixXd::Zero(N, N);
+  M_kkt_factorization_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
+  M_kkt_pre_factorization_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
 
   b_kkt_ = VectorXd::Zero(N);
   kkt_sol_ = VectorXd::Zero(N);
@@ -94,32 +94,32 @@ void FCCQPSolver::Solve(
   mu_lambda_c_.setZero();
 
   M_kkt_.setZero();
-  M_kkt_eq_.setZero();
+  M_kkt_pre_.setZero();
   b_kkt_.setZero();
 
-  M_kkt_eq_.topLeftCorner(n_vars_, n_vars_) = Q;
-  M_kkt_eq_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
-  M_kkt_eq_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
-  M_kkt_ = M_kkt_eq_;
+  M_kkt_pre_.topLeftCorner(n_vars_, n_vars_) = Q;
+  M_kkt_pre_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
+  M_kkt_pre_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
+  M_kkt_ = M_kkt_pre_;
   M_kkt_.topLeftCorner(n_vars_, n_vars_) += P_rho_;
 
   b_kkt_.head(n_vars_) = -b;
   b_kkt_.segment(n_vars_, n_eq_) = b_eq;
 
   // presolve without rho
-  M_kkt_eq_svd_.compute(M_kkt_eq_);
-  z_ = M_kkt_eq_svd_.solve(b_kkt_).head(n_vars_);
+  M_kkt_pre_factorization_.compute(M_kkt_pre_);
+  z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
 
   z_bar_ = z_;
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
 
-  M_kkt_svd_.compute(M_kkt_);
+  M_kkt_factorization_.compute(M_kkt_);
 
   for (int iter = 0; iter < max_iter_; ++iter) {
     q_rho_ = -rho_ * (z_bar_ - mu_z_);
     q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
     b_kkt_.head(n_vars_) = -(b + q_rho_);
-    kkt_sol_ = M_kkt_svd_.solve(b_kkt_);
+    kkt_sol_ = M_kkt_factorization_.solve(b_kkt_);
     z_ = kkt_sol_.head(n_vars_);
 
     z_bar_ = project_to_bounds(z_ + mu_z_, lb, ub);
