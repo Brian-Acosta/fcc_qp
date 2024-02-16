@@ -21,8 +21,8 @@ using Eigen::Vector3d;
 using Eigen::MatrixXd;
 using Eigen::Ref;
 
-FCCQPSolver::FCCQPSolver(int num_vars, int lambda_c_start, int nc,
-                         int num_equality_constraints) :
+FCCQPSolver::FCCQPSolver(int num_vars, int num_equality_constraints,
+                         int nc, int lambda_c_start) :
     n_vars_(num_vars), nc_(nc),
     lambda_c_start_(lambda_c_start), n_eq_(num_equality_constraints) {
   assert(nc_ >= 0);
@@ -76,10 +76,10 @@ VectorXd project_to_bounds(
 }
 
 void FCCQPSolver::Solve(
-    const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
-    const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
-    const vector<double>& friction_coeffs, const Ref<VectorXd>& lb,
-    const Ref<VectorXd>& ub, bool warm_start) {
+    const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
+    const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
+    const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
+    const Ref<const VectorXd>& ub, bool warm_start) {
 
   auto start = std::chrono::high_resolution_clock::now();
 

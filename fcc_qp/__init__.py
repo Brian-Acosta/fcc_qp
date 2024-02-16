@@ -1,1 +1,1 @@
-from fccqp_solver import *
+from fcc_qp_solver import *

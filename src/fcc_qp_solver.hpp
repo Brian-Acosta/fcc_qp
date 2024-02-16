@@ -27,8 +27,8 @@ struct FCCQPSolution {
 class FCCQPSolver {
  public:
 
-  FCCQPSolver(int num_vars, int lambda_c_start, int nc,
-              int num_equality_constraints);
+  FCCQPSolver(int num_vars, int num_equality_constraints, int nc,
+              int lambda_c_start);
 
   void set_rho(double rho) {
     assert(rho > 0);
@@ -48,10 +48,11 @@ class FCCQPSolver {
    * @param ub upper bounds on the variables. Must be infinity for contact
    * forces.
    */
-  void Solve(const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
-             const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
-             const vector<double>& friction_coeffs, const Ref<VectorXd>& lb,
-             const Ref<VectorXd>& ub, bool warm_start);
+  void Solve(const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
+             const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
+             const vector<double>& friction_coeffs,
+             const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub,
+             bool warm_start);
 
   FCCQPSolution GetSolution() const;
 

@@ -3,6 +3,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
+#include <pybind11/stl.h>
 
 #include <Eigen/Dense>
 
@@ -29,8 +30,8 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
 
     py::class_<FCCQPSolver>(m, "FCCQPSolver")
         .def(py::init<int,int,int,int>(),
-            py::arg("num_vars"), py::arg("lambda_c_start"), py::arg("nc"),
-            py::arg("num_equality_constraints"))
+            py::arg("num_vars"), py::arg("num_equality_constraints"),
+            py::arg("nc"), py::arg("lambda_c_start"))
         .def("Solve",
              &FCCQPSolver::Solve,
              py::arg("Q"), py::arg("b"), py::arg("A_eq"), py::arg("b_eq"),
