@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <tuple>
-#include "conehead_solver.hpp"
+#include "fcc_qp_solver.hpp"
 #include <cassert>
 
 namespace py = pybind11;
@@ -14,14 +14,14 @@ using std::max;
 using std::min;
 using std::vector;
 
-namespace conehead {
+namespace fcc_qp {
 
 using Eigen::VectorXd;
 using Eigen::Vector3d;
 using Eigen::MatrixXd;
 using Eigen::Ref;
 
-ConeHeadSolver::ConeHeadSolver(int num_vars, int u_start, int nu,
+FCCQPSolver::FCCQPSolver(int num_vars, int u_start, int nu,
                                int lambda_c_start, int nc,
                                int num_equality_constraints) :
     n_vars_(num_vars), nu_(nu), nc_(nc), u_start_(u_start),
@@ -85,7 +85,7 @@ VectorXd project_to_input_bounds(
 
 }
 
-void ConeHeadSolver::Solve(
+void FCCQPSolver::Solve(
     const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
     const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
     const vector<double>& friction_coeffs, const Ref<VectorXd>& u_lb,

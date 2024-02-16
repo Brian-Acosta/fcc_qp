@@ -5,7 +5,7 @@
 
 namespace py = pybind11;
 
-namespace conehead {
+namespace fcc_qp {
 
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
@@ -14,10 +14,10 @@ using Eigen::Ref;
 using std::vector;
 using std::unordered_map;
 
-class ConeHeadSolver {
+class FCCQPSolver {
  public:
 
-  ConeHeadSolver(int num_vars, int u_start, int nu, int lambda_c_start,
+  FCCQPSolver(int num_vars, int u_start, int nu, int lambda_c_start,
                  int nc, int num_equality_constraints);
 
   void set_rho(double rho) {

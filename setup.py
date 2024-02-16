@@ -124,7 +124,7 @@ class CMakeBuild(build_ext):
         full_buildfile = self.get_ext_fullpath(ext.name)
         base_buildfile = os.path.basename(full_buildfile)
         print('test')
-        destination = os.path.join('conehead', base_buildfile)
+        destination = os.path.join('fcc_qp', base_buildfile)
         print('test')
         print(full_buildfile, base_buildfile, destination)
         print('test')
@@ -141,14 +141,14 @@ class CMakeBuild(build_ext):
 # The information here can also be placed in setup.cfg - better separation of
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
-    name="conehead",
+    name="fcc_qp",
     version="0.0.1",
     author="Brian Acosta",
     author_email="brianjacosta17@gmail.com",
     description="A compact QP solver for whole body control problems.",
     long_description="",
-    ext_modules=[CMakeExtension("conehead_solver")],
-    packages=['conehead',],
+    ext_modules=[CMakeExtension("fcc_qp_solver")],
+    packages=['fcc_qp',],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     python_requires=">=3.6",
