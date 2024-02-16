@@ -19,6 +19,6 @@ using conehead::ConeHeadSolver;
 PYBIND11_MODULE(conehead_solver, m) {
     m.doc() = "Python bindings for C++/Eigen LCQP solver for WBC";
     py::class_<ConeHeadSolver>(m, "Solver")
-        .def(py::init<int,int,int,int,int>());
+        .def(py::init<int,int,int,int,int,int>());
 
 }

@@ -17,7 +17,8 @@ using std::unordered_map;
 class ConeHeadSolver {
  public:
 
-  ConeHeadSolver(int nv, int nu, int nh, int nc, int nc_active);
+  ConeHeadSolver(int num_vars, int u_start, int nu, int lambda_c_start,
+                 int nc, int num_equality_constraints);
 
   void set_rho(double rho) {
     assert(rho > 0);
@@ -26,42 +27,27 @@ class ConeHeadSolver {
 
   /*!
    * Solves the QP associated with the problem data
-   * @param M mass matrix (nv x nv), positive definite
-   * @param B input matrix (nv x nu)
-   * @param Jh stacked holonomic constraint matrix (nh x nv, full rank)
-   * @param Jc stacked contact constraint matrix (nc x nv, can have rows of zeros)
-   * @param bias dynamics bias (constant) term
-   * @param Jh_dotV holonomic constraint bias term
-   * @param Jc_dotV contact constraint biases
+   * @param A_eq linear equalityu constraints includeing dynamics,
+   * holonomic, and contact constraints
    * @param Q hessian of the cost on the stacked decision variables
-   * @param q linear term of the cost on the staked decision variables
-   * @param c constant term in the cost.
+   * @param q linear term of the cost on the stacked decision variables
    */
-  void Solve(
-      const Ref<MatrixXd>& M,
-      const Ref<MatrixXd>& B,
-      const Ref<MatrixXd>& Jh,
-      const Ref<MatrixXd>& Jc,
-      const Ref<MatrixXd>& Jc_active,
-      const Ref<VectorXd>& bias,
-      const Ref<VectorXd>& Jh_dotV,
-      const Ref<VectorXd>& Jc_dotV_active,
-      const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
-      const vector<double>& friction_coeffs, const Ref<VectorXd>& u_lb,
-      const Ref<VectorXd>& u_ub, bool warm_start);
-
+  void Solve(const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
+             const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
+             const vector<double>& friction_coeffs, const Ref<VectorXd>& u_lb,
+             const Ref<VectorXd>& u_ub, bool warm_start);
  private:
 
   double rho_ = 10;
   double eps_ = 1e-5;
   int max_iter_ = 100;
 
-  const int nv_;
+  const int n_vars_;
+  const int n_eq_;
   const int nu_;
-  const int nh_;
   const int nc_;
-  const int nc_active_;
-  const int n_;
+  const int u_start_;
+  const int lambda_c_start_;
 
   // Solver workspace variables
   MatrixXd P_rho_; // Hessian of augmented lagrangian term
