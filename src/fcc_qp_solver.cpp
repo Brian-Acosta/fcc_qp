@@ -21,35 +21,25 @@ using Eigen::Vector3d;
 using Eigen::MatrixXd;
 using Eigen::Ref;
 
-FCCQPSolver::FCCQPSolver(int num_vars, int u_start, int nu,
-                               int lambda_c_start, int nc,
-                               int num_equality_constraints) :
-    n_vars_(num_vars), nu_(nu), nc_(nc), u_start_(u_start),
+FCCQPSolver::FCCQPSolver(int num_vars, int lambda_c_start, int nc,
+                         int num_equality_constraints) :
+    n_vars_(num_vars), nc_(nc),
     lambda_c_start_(lambda_c_start), n_eq_(num_equality_constraints) {
-  assert(nu_ >= 0);
   assert(nc_ >= 0);
   assert(nc_ % 3 == 0);
-  assert(u_start <= n_vars_ - nu_);
   assert(lambda_c_start <= n_vars_ - nc_);
 
   // Initialize workspace variables
-  P_rho_ = MatrixXd::Zero(n_vars_, n_vars_);
-  P_rho_.block(u_start_, u_start_, nu_, nu_) =
-      rho_ * MatrixXd::Identity(nu_, nu_);
-  P_rho_.bottomRightCorner(nc_, nc_) = rho_ * MatrixXd::Identity(nc_, nc_);
-  q_ = VectorXd::Zero(n_vars_);
+  P_rho_ = rho_ * MatrixXd::Identity(n_vars_, n_vars_);
   q_rho_ = VectorXd::Zero(n_vars_);
 
-  A_ = MatrixXd::Zero(n_eq_, n_vars_);
-
-  int N = n_vars_ + A_.rows();
+  int N = n_vars_ + n_eq_;
   M_kkt_ = MatrixXd::Zero(N,N);
   b_kkt_ = VectorXd::Zero(N);
   kkt_sol_ = VectorXd::Zero(N);
   z_ = VectorXd::Zero(n_vars_);
-  u_bar_ = VectorXd::Zero(nu_);
-  mu_u_ = VectorXd::Zero(nu_);
-  u_res_ = VectorXd::Zero(nu_);
+  z_bar_ = VectorXd::Zero(n_vars_);
+  z_res_ = VectorXd::Zero(n_vars_);
   lambda_c_bar_ = VectorXd::Zero(nc_);
   mu_lambda_c_ = VectorXd::Zero(nc_);
   lambda_c_res_ = VectorXd::Zero(nc_);
@@ -74,11 +64,11 @@ VectorXd project_to_friction_cone(
   return out;
 }
 
-VectorXd project_to_input_bounds(
-    const VectorXd& u, const VectorXd& lb, const VectorXd& ub) {
-  VectorXd out(u.rows());
-  for (int i = 0; i < u.rows(); ++i) {
-    out(i) = max(min(u(i), ub(i)), lb(i));
+VectorXd project_to_bounds(
+    const VectorXd& x, const VectorXd& lb, const VectorXd& ub) {
+  VectorXd out(x.rows());
+  for (int i = 0; i < x.rows(); ++i) {
+    out(i) = max(min(x(i), ub(i)), lb(i));
   }
   return out;
 }
@@ -86,50 +76,52 @@ VectorXd project_to_input_bounds(
 }
 
 void FCCQPSolver::Solve(
-    const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
     const Ref<MatrixXd>& Q, const Ref<VectorXd>& b,
-    const vector<double>& friction_coeffs, const Ref<VectorXd>& u_lb,
-    const Ref<VectorXd>& u_ub, bool warm_start) {
+    const Ref<MatrixXd>& A_eq, const Ref<VectorXd>& b_eq,
+    const vector<double>& friction_coeffs, const Ref<VectorXd>& lb,
+    const Ref<VectorXd>& ub, bool warm_start) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
   if (not warm_start) {
     mu_lambda_c_.setZero();
-    mu_u_.setZero();
+    mu_z_.setZero();
     lambda_c_bar_.setZero();
-    u_bar_.setZero();
+    z_bar_.setZero();
   }
+
+  M_kkt_.setZero();
+  b_kkt_.setZero();
 
   M_kkt_.topLeftCorner(n_vars_, n_vars_) = Q + P_rho_;
 
-  M_kkt_.bottomLeftCorner(n_eq_, n_vars_) = A_;
-  M_kkt_.topRightCorner(n_vars_, n_eq_) = A_.transpose();
+  M_kkt_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
+  M_kkt_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
   b_kkt_.segment(n_vars_, n_eq_) = b_eq;
 
   auto pinv_factorization = (M_kkt_.transpose() * M_kkt_).ldlt();
 
   for (int iter = 0; iter < max_iter_; ++iter) {
-    q_rho_.segment(u_start_, nu_) = -rho_ * (u_bar_ - mu_u_);
+    q_rho_ = -rho_ * (z_bar_ - mu_z_);
     q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
     b_kkt_.head(n_vars_) = -(b + q_rho_);
     kkt_sol_ = pinv_factorization.solve(M_kkt_.transpose() * b_kkt_);
     z_ = kkt_sol_.head(n_vars_);
 
-    u_bar_ = project_to_input_bounds(
-        z_.segment(u_start_, nu_) + mu_u_, u_lb, u_ub);
+    z_bar_ = project_to_bounds(z_ + mu_z_, lb, ub);
 
     lambda_c_bar_ = project_to_friction_cone(
         z_.segment(lambda_c_start_, nc_) + mu_lambda_c_, friction_coeffs);
 
-    u_res_ = z_.segment(u_start_, nu_) - u_bar_;
+    z_res_ = z_ - z_bar_;
     lambda_c_res_ = z_.segment(lambda_c_start_, nc_) - lambda_c_bar_;
-    u_res_norm_ = u_res_.norm();
+    z_res_norm_ = z_res_.norm();
     lambda_c_res_norm_ = lambda_c_res_.norm();
 
-    mu_u_ += u_res_;
+    mu_z_ += z_res_;
     mu_lambda_c_ += lambda_c_res_;
 
-    if (lambda_c_res_norm_ < eps_ and u_res_norm_ < eps_) {
+    if (lambda_c_res_norm_ < eps_ and z_res_norm_ < eps_) {
       n_iter_ = iter;
       break;
     }
@@ -139,6 +131,16 @@ void FCCQPSolver::Solve(
 
   std::chrono::duration<double> solve_time = end - start;
   solve_time_ = solve_time.count();
+}
+
+FCCQPSolution FCCQPSolver::GetSolution() const {
+  FCCQPSolution out;
+  out.eps_bounds = z_res_norm_;
+  out.eps_friction_cone = lambda_c_res_norm_;
+  out.solve_time = solve_time_;
+  out.n_iter = n_iter_;
+  out.z = z_;
+  return out;
 }
 
 }
