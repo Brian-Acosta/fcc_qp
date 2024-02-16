@@ -1,6 +1,6 @@
-# Solver for Lorentz Cone-Constrained Whole-Body-Control Quadratic Programs
+# Custom ADMM based solver for Friction Cone Constrained QPs
 ## Overview
-C++ solver (with python bindings) exclusively for solving instantaneous whole body control QPs of the form
+Optimization based control of legged robots often leads to the formation of reactive controllers in the form of Quadratic Programs. 
 
 ```math
 \displaystyle u = \arg \min_{z = [\dot{v}, u, \lambda_{h}, \lambda_{c}}
