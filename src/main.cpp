@@ -32,11 +32,13 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
         .def(py::init<int,int,int,int>(),
             py::arg("num_vars"), py::arg("num_equality_constraints"),
             py::arg("nc"), py::arg("lambda_c_start"))
+        .def("set_rho", &FCCQPSolver::set_rho)
+        .def("set_max_iter", &FCCQPSolver::set_max_iter)
+        .def("set_eps", &FCCQPSolver::set_eps)
         .def("Solve",
              &FCCQPSolver::Solve,
              py::arg("Q"), py::arg("b"), py::arg("A_eq"), py::arg("b_eq"),
-             py::arg("friction_coeffs"), py::arg("lb"), py::arg("ub"),
-             py::arg("warm_start"))
+             py::arg("friction_coeffs"), py::arg("lb"), py::arg("ub"))
         .def("GetSolution", &FCCQPSolver::GetSolution);
 
 }

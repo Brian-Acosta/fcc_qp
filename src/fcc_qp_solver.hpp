@@ -21,7 +21,6 @@ struct FCCQPSolution {
   double eps_friction_cone;
   double solve_time;
   VectorXd z;
-
 };
 
 class FCCQPSolver {
@@ -33,6 +32,17 @@ class FCCQPSolver {
   void set_rho(double rho) {
     assert(rho > 0);
     rho_ = rho;
+    P_rho_ = rho_ * MatrixXd::Identity(n_vars_, n_vars_);
+  }
+
+  void set_max_iter(int n) {
+    assert(n > 0);
+    max_iter_ = n;
+  }
+
+  void set_eps(double eps) {
+    assert(eps > 0);
+    eps_ = eps;
   }
 
   /*!
@@ -51,8 +61,7 @@ class FCCQPSolver {
   void Solve(const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
              const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
              const vector<double>& friction_coeffs,
-             const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub,
-             bool warm_start);
+             const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
   FCCQPSolution GetSolution() const;
 
@@ -60,8 +69,8 @@ class FCCQPSolver {
  private:
 
   double rho_ = 10;
-  double eps_ = 1e-5;
-  int max_iter_ = 100;
+  double eps_ = 1e-10;
+  int max_iter_ = 1000;
 
   const int n_vars_;
   const int n_eq_;
@@ -72,8 +81,9 @@ class FCCQPSolver {
   MatrixXd P_rho_; // Hessian of augmented lagrangian term
   VectorXd q_rho_; // augmented lagrangian cost linear term
 
-  MatrixXd M_kkt_; // KKT matrix
-  VectorXd b_kkt_; // KKT right hand side
+  MatrixXd M_kkt_;   // KKT matrix for admm update
+  MatrixXd M_kkt_eq_; // KKT matrix for presolve equality constrained qp
+  VectorXd b_kkt_;   // KKT right hand side
 
   // Variables
   VectorXd kkt_sol_;      // primal and equality duals from stage 1 primal solve
@@ -82,6 +92,11 @@ class FCCQPSolver {
   VectorXd lambda_c_bar_; // ADMM copy of lambda_c
   VectorXd mu_z_;         // Dual for z = z_bar constraint
   VectorXd mu_lambda_c_;  // Dual for lambda_c = lambda_c_bar constraint
+
+  // SVDs
+  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_svd_;
+  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_eq_svd_;
+
 
   // residuals
   VectorXd z_res_;
