@@ -6,8 +6,6 @@
 #include "fcc_qp_solver.hpp"
 #include <cassert>
 
-namespace py = pybind11;
-
 using std::abs;
 using std::sqrt;
 using std::max;
@@ -25,8 +23,8 @@ using Eigen::Ref;
 
 FCCQPSolver::FCCQPSolver(int num_vars, int num_equality_constraints,
                          int nc, int lambda_c_start) :
-    n_vars_(num_vars), nc_(nc),
-    lambda_c_start_(lambda_c_start), n_eq_(num_equality_constraints) {
+    n_vars_(num_vars), n_eq_(num_equality_constraints), nc_(nc),
+    lambda_c_start_(lambda_c_start) {
   assert(nc_ >= 0);
   assert(nc_ % 3 == 0);
   assert(lambda_c_start <= n_vars_ - nc_);
@@ -149,10 +147,10 @@ void FCCQPSolver::Solve(
 
 FCCQPSolution FCCQPSolver::GetSolution() const {
   FCCQPSolution out;
-  out.eps_bounds = z_res_norm_;
-  out.eps_friction_cone = lambda_c_res_norm_;
-  out.solve_time = solve_time_;
-  out.n_iter = n_iter_;
+  out.details.eps_bounds = z_res_norm_;
+  out.details.eps_friction_cone = lambda_c_res_norm_;
+  out.details.solve_time = solve_time_;
+  out.details.n_iter = n_iter_;
   out.z = z_;
   return out;
 }
