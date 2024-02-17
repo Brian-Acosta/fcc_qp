@@ -65,6 +65,7 @@ class FCCQPSolver {
 
   FCCQPSolution GetSolution() const;
 
+  using Details = FCCQPSolverDetails;
 
  private:
 
