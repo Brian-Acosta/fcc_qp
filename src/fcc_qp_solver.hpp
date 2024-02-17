@@ -1,9 +1,5 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
 #include <Eigen/Dense>
 #include <tuple>
-
-namespace py = pybind11;
 
 namespace fcc_qp {
 
@@ -15,11 +11,15 @@ using std::vector;
 using std::unordered_map;
 
 
+struct FCCQPSolverDetails {
+  int n_iter{};
+  double eps_bounds{};
+  double eps_friction_cone{};
+  double solve_time{};
+};
+
 struct FCCQPSolution {
-  int n_iter;
-  double eps_bounds;
-  double eps_friction_cone;
-  double solve_time;
+  FCCQPSolverDetails details{};
   VectorXd z;
 };
 

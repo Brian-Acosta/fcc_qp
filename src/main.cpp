@@ -1,15 +1,10 @@
 #include <iostream>
-#include "fcc_qp_solver.hpp"
-
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include <Eigen/Dense>
+#include "fcc_qp_solver.hpp"
 
-#include <chrono>
-
-#include <tuple>
 
 namespace py = pybind11;
 
@@ -17,15 +12,19 @@ using namespace Eigen;
 using namespace std;
 using fcc_qp::FCCQPSolver;
 using fcc_qp::FCCQPSolution;
+using fcc_qp::FCCQPSolverDetails;
 
 PYBIND11_MODULE(fcc_qp_solver, m) {
     m.doc() = "Python bindings for C++/Eigen LCQP solver for WBC";
 
+    py::class_<FCCQPSolverDetails>(m, "FCCQPSolverDetails")
+        .def_readwrite("n_iter", &FCCQPSolverDetails::n_iter)
+        .def_readwrite("eps_bounds", &FCCQPSolverDetails::eps_bounds)
+        .def_readwrite("eps_friction_cone",&FCCQPSolverDetails::eps_friction_cone)
+        .def_readwrite("solve_time", &FCCQPSolverDetails::solve_time);
+
     py::class_<FCCQPSolution>(m, "FCCQPSolution")
-        .def_readwrite("n_iter", &FCCQPSolution::n_iter)
-        .def_readwrite("eps_bounds", &FCCQPSolution::eps_bounds)
-        .def_readwrite("eps_friction_cone", &FCCQPSolution::eps_friction_cone)
-        .def_readwrite("solve_time", &FCCQPSolution::solve_time)
+        .def_readwrite("details", &FCCQPSolution::details)
         .def_readwrite("z", &FCCQPSolution::z);
 
     py::class_<FCCQPSolver>(m, "FCCQPSolver")

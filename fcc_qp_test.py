@@ -43,8 +43,8 @@ def plot_variable(name, val, idx, ylabel, ax):
 def make_plots(results):
     idx = [i for i in range(len(results))]
     z = np.vstack([result.z for result in results])
-    ts = [result.solve_time for result in results]
-    n = [result.n_iter for result in results]
+    ts = [result.details.solve_time for result in results]
+    n = [result.details.n_iter for result in results]
 
     # Dimensions of Cassie OSC problem
     vdot = z[:, :22]
