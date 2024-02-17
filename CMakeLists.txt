@@ -14,11 +14,11 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 set(SRCS
-    ${SOURCE_DIR}/fcc_qp_solver.cpp
+    ${SOURCE_DIR}/fcc_qp.cpp
     )
     
 set(HEADERS
-    ${SOURCE_DIR}/fcc_qp_solver.hpp
+    ${SOURCE_DIR}/fcc_qp.hpp
     )
 
 include_directories(${EIGEN3_INCLUDE_DIR})

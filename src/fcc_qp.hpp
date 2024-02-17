@@ -11,7 +11,7 @@ using std::vector;
 using std::unordered_map;
 
 
-struct FCCQPSolverDetails {
+struct FCCQPDetails {
   int n_iter{};
   double eps_bounds{};
   double eps_friction_cone{};
@@ -19,15 +19,14 @@ struct FCCQPSolverDetails {
 };
 
 struct FCCQPSolution {
-  FCCQPSolverDetails details{};
+  FCCQPDetails details{};
   VectorXd z;
 };
 
-class FCCQPSolver {
+class FCCQP {
  public:
 
-  FCCQPSolver(int num_vars, int num_equality_constraints, int nc,
-              int lambda_c_start);
+  FCCQP(int num_vars, int num_equality_constraints, int nc, int lambda_c_start);
 
   void set_rho(double rho) {
     assert(rho > 0);
@@ -64,8 +63,6 @@ class FCCQPSolver {
              const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
   FCCQPSolution GetSolution() const;
-
-  using Details = FCCQPSolverDetails;
 
  private:
 

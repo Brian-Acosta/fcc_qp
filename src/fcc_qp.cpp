@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <tuple>
-#include "fcc_qp_solver.hpp"
+#include "fcc_qp.hpp"
 #include <cassert>
 
 using std::abs;
@@ -21,7 +21,7 @@ using Eigen::BDCSVD;
 using Eigen::CompleteOrthogonalDecomposition;
 using Eigen::Ref;
 
-FCCQPSolver::FCCQPSolver(int num_vars, int num_equality_constraints,
+FCCQP::FCCQP(int num_vars, int num_equality_constraints,
                          int nc, int lambda_c_start) :
     n_vars_(num_vars), n_eq_(num_equality_constraints), nc_(nc),
     lambda_c_start_(lambda_c_start) {
@@ -80,7 +80,7 @@ VectorXd project_to_bounds(
 
 }
 
-void FCCQPSolver::Solve(
+void FCCQP::Solve(
     const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
     const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
     const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
@@ -145,7 +145,7 @@ void FCCQPSolver::Solve(
   solve_time_ = solve_time.count();
 }
 
-FCCQPSolution FCCQPSolver::GetSolution() const {
+FCCQPSolution FCCQP::GetSolution() const {
   FCCQPSolution out;
   out.details.eps_bounds = z_res_norm_;
   out.details.eps_friction_cone = lambda_c_res_norm_;

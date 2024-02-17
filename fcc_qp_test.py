@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from fcc_qp import FCCQPSolver, FCCQPSolution
+from fcc_qp import FCCQP, FCCQPSolution
 
 
 SMALL_SIZE = 20
@@ -68,7 +68,7 @@ def main():
     qps = load_qp_matrices('running')
 
     # Dimensions of Cassie OSC problem
-    solver = FCCQPSolver(50, 38, 12, 38)
+    solver = FCCQP(50, 38, 12, 38)
     solver.set_rho(1000)
     solver.set_eps(1e-4)
 
