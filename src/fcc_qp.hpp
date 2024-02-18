@@ -12,12 +12,20 @@ using std::vector;
 using std::unordered_map;
 
 
+enum FCCQPSolveStatus {
+  kSuccess = 0,
+  kMaxIterations = 1
+};
+
 struct FCCQPDetails {
   int n_iter{};
   double eps_bounds{};
   double eps_friction_cone{};
   double solve_time{};
   double factorization_time{};
+  double bounds_viol{};
+  double friction_cone_viol{};
+  FCCQPSolveStatus solve_status;
 };
 
 struct FCCQPSolution {
@@ -103,6 +111,8 @@ class FCCQP {
   VectorXd lambda_c_res_;
   double z_res_norm_{};
   double lambda_c_res_norm_{};
+  double bounds_viol_{};
+  double fricion_con_viol_{};
 
   // solve info
   int n_iter_{};

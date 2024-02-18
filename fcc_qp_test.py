@@ -39,12 +39,14 @@ def plot_variable(name, val, idx, ylabel, ax):
     ax.set_ylabel(ylabel)
 
 
-@mpl.rc_context({'lines.linewidth': 3})
+@mpl.rc_context({'lines.linewidth': 2})
 def make_plots(results):
     idx = [i for i in range(len(results))]
     z = np.vstack([result.z for result in results])
     ts = [result.details.solve_time for result in results]
     n = [result.details.n_iter for result in results]
+    fcone_viol = [result.details.friction_cone_viol for result in results]
+    bound_viol = [result.details.bounds_viol for result in results]
 
     # Dimensions of Cassie OSC problem
     vdot = z[:, :22]
@@ -52,15 +54,17 @@ def make_plots(results):
     lambda_h = z[:, 32:38]
     lambda_c = z[:, 38:]
 
-    fig, ax = plt.subplots(2, 3, figsize=(20, 12))
+    fig, ax = plt.subplots(2, 4, figsize=(15, 9))
 
     plot_variable('U Solution', u, idx, 'u (nm)', ax[0][0])
     plot_variable('Solve Time', ts, idx, 'Solve Time (seconds)', ax[0][1])
     plot_variable('Number of Iterations', n, idx, 'Iterations', ax[0][2])
-    plot_variable('Vdot Solution', vdot, idx, 'Vdot Solution', ax[1][0])
+    plot_variable('Fcone Viol', fcone_viol, idx, 'Viol', ax[0][3])
+    plot_variable('friction', vdot, idx, 'Vdot Solution', ax[1][0])
     plot_variable('Lambda_h Solution', lambda_h, idx, 'Lambda_h (N or Nm)',
                   ax[1][1])
     plot_variable('Lambda_c Solution', lambda_c, idx, 'lambda_c (N)', ax[1][2])
+    plot_variable('Bounds Viol', bound_viol, idx, 'viol', ax[1][3])
     plt.show()
 
 
@@ -69,8 +73,9 @@ def main():
 
     # Dimensions of Cassie OSC problem
     solver = FCCQP(50, 38, 12, 38)
-    solver.set_rho(1000)
+    solver.set_rho(1e-2)
     solver.set_eps(1e-4)
+    solver.set_max_iter(10)
 
     results = []
     for i in range(len(qps)):
