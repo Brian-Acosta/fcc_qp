@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <tuple>
+#include <iostream>
 
 namespace fcc_qp {
 
@@ -16,6 +17,7 @@ struct FCCQPDetails {
   double eps_bounds{};
   double eps_friction_cone{};
   double solve_time{};
+  double factorization_time{};
 };
 
 struct FCCQPSolution {
@@ -67,8 +69,8 @@ class FCCQP {
  private:
 
   double rho_ = 10;
-  double eps_ = 1e-10;
-  int max_iter_ = 1000;
+  double eps_ = 1e-5;
+  int max_iter_ = 100;
 
   const int n_vars_;
   const int n_eq_;
@@ -105,6 +107,7 @@ class FCCQP {
   // solve info
   int n_iter_{};
   double solve_time_{};
+  double factorization_time_{};
 };
 
 }
