@@ -78,6 +78,29 @@ VectorXd project_to_bounds(
   return out;
 }
 
+double calc_friction_cone_violation(
+    const VectorXd& f, const vector<double>& friction_coeffs) {
+  double violation = 0;
+
+  for (int i = 0; i < f.rows() / 3; ++i) {
+    int start = 3*i;
+
+    double fz = f(start + 2);
+    if (fz < 0) {
+      violation += f.segment<3>(start).norm();
+    } else {
+      double mu = friction_coeffs.at(i);
+      violation += max(0., f.segment<2>(start).norm() -mu * fz);
+    }
+  }
+  return violation;
+}
+
+double calc_bound_violation(
+    const VectorXd& x, const VectorXd& lb, const VectorXd& ub) {
+  return (x - project_to_bounds(x, lb, ub)).norm();
+}
+
 }
 
 void FCCQP::Solve(
@@ -149,12 +172,18 @@ void FCCQP::Solve(
 
   std::chrono::duration<double> solve_time = end - start;
   solve_time_ = solve_time.count();
+  bounds_viol_ = calc_bound_violation(z_, lb, ub);
+  fricion_con_viol_ = calc_friction_cone_violation(
+      z_.segment(lambda_c_start_, nc_), friction_coeffs);
+
 }
 
 FCCQPSolution FCCQP::GetSolution() const {
   FCCQPSolution out;
   out.details.eps_bounds = z_res_norm_;
   out.details.eps_friction_cone = lambda_c_res_norm_;
+  out.details.bounds_viol = bounds_viol_;
+  out.details.friction_cone_viol = fricion_con_viol_;
   out.details.solve_time = solve_time_;
   out.details.factorization_time = factorization_time_;
   out.details.n_iter = n_iter_;
