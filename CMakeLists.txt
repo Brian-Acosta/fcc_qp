@@ -16,7 +16,7 @@ include(CPack)
 set(SRCS
     ${SOURCE_DIR}/fcc_qp.cpp
     )
-    
+
 set(HEADERS
     ${SOURCE_DIR}/fcc_qp.hpp
     )

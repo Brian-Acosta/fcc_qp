@@ -21,7 +21,8 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
         .def_readwrite("n_iter", &FCCQPDetails::n_iter)
         .def_readwrite("eps_bounds", &FCCQPDetails::eps_bounds)
         .def_readwrite("eps_friction_cone",&FCCQPDetails::eps_friction_cone)
-        .def_readwrite("solve_time", &FCCQPDetails::solve_time);
+        .def_readwrite("solve_time", &FCCQPDetails::solve_time)
+        .def_readwrite("factorization_time", &FCCQPDetails::factorization_time);
 
     py::class_<FCCQPSolution>(m, "FCCQPSolution")
         .def_readwrite("details", &FCCQPSolution::details)

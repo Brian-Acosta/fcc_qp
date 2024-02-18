@@ -105,14 +105,20 @@ void FCCQP::Solve(
   b_kkt_.segment(n_vars_, n_eq_) = b_eq;
 
   // presolve without rho
+  auto fact_start = std::chrono::high_resolution_clock::now();
   M_kkt_pre_factorization_.compute(M_kkt_pre_);
+  M_kkt_factorization_.compute(M_kkt_);
+
+  auto fact_end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> fact_time = fact_end - fact_start;
+  factorization_time_ = fact_time.count();
+
   z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
 
   z_bar_ = z_;
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
 
-  M_kkt_factorization_.compute(M_kkt_);
-
+  n_iter_ = max_iter_;
   for (int iter = 0; iter < max_iter_; ++iter) {
     q_rho_ = -rho_ * (z_bar_ - mu_z_);
     q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
@@ -150,6 +156,7 @@ FCCQPSolution FCCQP::GetSolution() const {
   out.details.eps_bounds = z_res_norm_;
   out.details.eps_friction_cone = lambda_c_res_norm_;
   out.details.solve_time = solve_time_;
+  out.details.factorization_time = factorization_time_;
   out.details.n_iter = n_iter_;
   out.z = z_;
   return out;
