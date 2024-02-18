@@ -9,8 +9,6 @@ using Eigen::MatrixXd;
 using Eigen::Ref;
 
 using std::vector;
-using std::unordered_map;
-
 
 enum FCCQPSolveStatus {
   kSuccess = 0,
