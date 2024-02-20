@@ -66,7 +66,7 @@ Vector3d project_to_friction_cone(const Vector3d& f, double mu) {
   }
 
   // More than 90 degrees from the side of the cone, closest point is the origin
-  if (f(2) / norm_fxy < -1. / mu) {
+  if (f(2) / norm_fxy < -mu) {
     return Vector3d::Zero();
   }
 
