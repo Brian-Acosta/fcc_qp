@@ -52,19 +52,38 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
 
 namespace {
 
+Vector3d project_to_friction_cone(const Vector3d& f, double mu) {
+  double norm_fxy = f.head<2>().norm();
+
+  // inside the friction cone, do nothing
+  if (mu * f(2) -  norm_fxy >= 0) {
+    return f;
+  }
+
+  // handle degenerate case of pure normal force or non-positive friction coeff
+  if (norm_fxy == 0 or mu <= 0) {
+    return {0., 0., max(f(2), 0.)};
+  }
+
+  // More than 90 degrees from the side of the cone, closest point is the origin
+  if (f(2) / norm_fxy < -1. / mu) {
+    return Vector3d::Zero();
+  }
+
+  // project up to the side of the friction cone
+  double xy_ratio = mu * f(2)  / norm_fxy;
+  Vector3d cone_ray(xy_ratio * f(0), xy_ratio * f(1), f(2));
+  cone_ray.normalize();
+  return cone_ray.dot(f) * cone_ray;
+
+}
+
 VectorXd project_to_friction_cone(
     const VectorXd& f, const vector<double>& friction_coeffs) {
   VectorXd out = VectorXd::Zero(f.rows());
   for (int i = 0; i < f.rows() / 3; ++i) {
-    int start = 3*i;
-    double fz = max(f(start + 2), 0.);
-    double norm_xy = f.segment(start, 2).norm();
-    double num = min(
-        friction_coeffs.at(i) * fz, norm_xy);
-    double ratio = (norm_xy > 0) ? num / norm_xy : 1.0;
-
-    out.segment(start, 2) = ratio * f.segment(start, 2);
-    out(start+2) = fz;
+    out.segment<3>(3*i) = project_to_friction_cone(
+        f.segment<3>(3*i), friction_coeffs.at(i));
   }
   return out;
 }
@@ -84,14 +103,9 @@ double calc_friction_cone_violation(
 
   for (int i = 0; i < f.rows() / 3; ++i) {
     int start = 3*i;
-
     double fz = f(start + 2);
-    if (fz < 0) {
-      violation += f.segment<3>(start).norm();
-    } else {
-      double mu = friction_coeffs.at(i);
-      violation += max(0., f.segment<2>(start).norm() -mu * fz);
-    }
+    double mu = friction_coeffs.at(i);
+    violation += max(0., f.segment<2>(start).norm() -mu * fz);
   }
   return violation;
 }
