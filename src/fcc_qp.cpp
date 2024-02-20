@@ -56,7 +56,7 @@ Vector3d project_to_friction_cone(const Vector3d& f, double mu) {
   double norm_fxy = f.head<2>().norm();
 
   // inside the friction cone, do nothing
-  if (mu * f(2) -  norm_fxy >= 0) {
+  if (mu * f(2) >=  norm_fxy) {
     return f;
   }
 
