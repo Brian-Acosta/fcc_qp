@@ -74,8 +74,8 @@ class FCCQP {
 
  private:
 
-  double rho_ = 10;
-  double eps_ = 1e-5;
+  double rho_ = 1e-1;
+  double eps_ = 1e-6;
   int max_iter_ = 100;
 
   const int n_vars_;
