@@ -60,13 +60,8 @@ Vector3d project_to_friction_cone(const Vector3d& f, double mu) {
     return f;
   }
 
-  // handle degenerate case of pure normal force or non-positive friction coeff
-  if (norm_fxy == 0 or mu <= 0) {
-    return {0., 0., max(f(2), 0.)};
-  }
-
   // More than 90 degrees from the side of the cone, closest point is the origin
-  if (f(2) / norm_fxy < -mu) {
+  if (f(2) < -mu * norm_fxy) {
     return Vector3d::Zero();
   }
 
