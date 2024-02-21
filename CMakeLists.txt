@@ -20,7 +20,7 @@ include(CPack)
 
 set(SRCS
     ${SOURCE_DIR}/fcc_qp.cpp
-    ${SOURCE_DIR}/spqr_solver.hpp
+    ${SOURCE_DIR}/spqr_solver.cpp
     )
 
 set(HEADERS

@@ -69,7 +69,7 @@ def make_plots(results):
 
 
 def main():
-    qps = load_qp_matrices('running')
+    qps = load_qp_matrices('walking')
 
     # Dimensions of Cassie OSC problem
     solver = FCCQP(50, 38, 12, 38)

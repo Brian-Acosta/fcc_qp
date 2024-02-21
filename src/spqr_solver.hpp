@@ -22,7 +22,7 @@ class SPQRSolver {
   cholmod_sparse* A_ = nullptr;
   cholmod_dense* b_ = nullptr;
   cholmod_triplet* triplet_ = nullptr;
-  SuiteSparseQR_factorization<double>* A_factorization_ = nullptr;
+  SuiteSparseQR_factorization<double>* QR_ = nullptr;
 
   std::vector<int> triplet_j_;
   std::vector<int> triplet_i_;

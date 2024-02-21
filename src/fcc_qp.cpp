@@ -24,7 +24,10 @@ using Eigen::Ref;
 FCCQP::FCCQP(int num_vars, int num_equality_constraints,
                          int nc, int lambda_c_start) :
     n_vars_(num_vars), n_eq_(num_equality_constraints), nc_(nc),
-    lambda_c_start_(lambda_c_start) {
+    lambda_c_start_(lambda_c_start) ,
+    spqr_M_kkt_(num_vars + num_equality_constraints),
+    spqr_M_kkt_pre_(num_vars + num_equality_constraints) {
+
   assert(nc_ >= 0);
   assert(nc_ % 3 == 0);
   assert(lambda_c_start <= n_vars_ - nc_);
@@ -110,16 +113,6 @@ double calc_bound_violation(
   return (x - project_to_bounds(x, lb, ub)).norm();
 }
 
-Eigen::VectorXd sparse_qr_solve(const MatrixXd& A, const VectorXd& b) {
-  size_t max_nnz = A.size();
-  size_t n = A.rows();
-
-  cholmod_common common;
-  cholmod_start(&common);
-  cholmod_triplet *T = cholmod_allocate_triplet(n, n, max_nnz, 0,
-                                                  CHOLMOD_REAL, &common);
-}
-
 }
 
 void FCCQP::Solve(
@@ -148,14 +141,14 @@ void FCCQP::Solve(
 
   // presolve without rho
   auto fact_start = std::chrono::high_resolution_clock::now();
-  M_kkt_pre_factorization_.compute(M_kkt_pre_);
-  M_kkt_factorization_.compute(M_kkt_);
+  spqr_M_kkt_.compute(M_kkt_pre_);
+  spqr_M_kkt_pre_.compute(M_kkt_);
 
   auto fact_end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> fact_time = fact_end - fact_start;
   factorization_time_ = fact_time.count();
 
-  z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+  z_ = spqr_M_kkt_pre_.solve(b_kkt_).head(n_vars_);
 
   z_bar_ = z_;
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
@@ -165,7 +158,7 @@ void FCCQP::Solve(
     q_rho_ = -rho_ * (z_bar_ - mu_z_);
     q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
     b_kkt_.head(n_vars_) = -(b + q_rho_);
-    kkt_sol_ = M_kkt_factorization_.solve(b_kkt_);
+    kkt_sol_ = spqr_M_kkt_.solve(b_kkt_);
     z_ = kkt_sol_.head(n_vars_);
 
     z_bar_ = project_to_bounds(z_ + mu_z_, lb, ub);
