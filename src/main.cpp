@@ -10,6 +10,7 @@ namespace py = pybind11;
 
 using namespace Eigen;
 using namespace std;
+
 using fcc_qp::FCCQP;
 using fcc_qp::FCCQPSolution;
 using fcc_qp::FCCQPDetails;
