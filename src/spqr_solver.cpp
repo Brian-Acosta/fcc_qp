@@ -70,8 +70,6 @@ void SPQRSolver::compute(const Eigen::MatrixXd &A) {
   }
   A_ = cholmod_l_triplet_to_sparse(triplet_, nnz, &common_);
 
-//  cholmod_l_print_sparse(A_, "A", &common_);
-
   assert(A_ != nullptr);
 
   if (QR_ != nullptr) {
@@ -79,7 +77,7 @@ void SPQRSolver::compute(const Eigen::MatrixXd &A) {
     QR_ = nullptr;
   }
   QR_ = SuiteSparseQR_factorize<double>(
-      SPQR_ORDERING_AMD, 1e-10, A_, &common_);
+      SPQR_ORDERING_CHOLMOD, 0, A_, &common_);
 
   assert(QR_ != nullptr);
 }
@@ -91,8 +89,9 @@ Eigen::VectorXd SPQRSolver::solve(const Eigen::VectorXd &b) {
   auto aux = SuiteSparseQR_qmult<double>(SPQR_QTX, QR_, b_, &common_);
   assert(aux != nullptr);
 
-//  auto sol = SuiteSparseQR<double>(A_, b_, &common_);
-  auto sol = SuiteSparseQR_solve<double>(SPQR_RETX_EQUALS_B, QR_, aux, &common_);
+
+  auto sol = SuiteSparseQR_solve<double>(SPQR_RETX_EQUALS_B, QR_, aux,
+                                         &common_);
 
 
   assert(sol != nullptr);
@@ -100,12 +99,8 @@ Eigen::VectorXd SPQRSolver::solve(const Eigen::VectorXd &b) {
 
   double* values = static_cast<double*>(sol->x);
 
-//  for(int i = 0; i < n_; ++i) {
-//    std::cout << values[i] << std::endl;
-//  }
-
   Eigen::VectorXd out = Eigen::VectorXd::Zero(n_);
-  mempcpy(out.data(), values, n_ * sizeof(double));
+  memcpy(out.data(), values, n_ * sizeof(double));
 
   cholmod_l_free_dense(&aux, &common_);
   cholmod_l_free_dense(&sol, &common_);
