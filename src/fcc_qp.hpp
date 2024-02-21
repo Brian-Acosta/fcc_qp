@@ -104,7 +104,6 @@ class FCCQP {
   Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_factorization_;
   Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_;
 
-
   // residuals
   VectorXd z_res_;
   VectorXd lambda_c_res_;

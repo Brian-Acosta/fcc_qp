@@ -110,6 +110,16 @@ double calc_bound_violation(
   return (x - project_to_bounds(x, lb, ub)).norm();
 }
 
+Eigen::VectorXd sparse_qr_solve(const MatrixXd& A, const VectorXd& b) {
+  size_t max_nnz = A.size();
+  size_t n = A.rows();
+
+  cholmod_common common;
+  cholmod_start(&common);
+  cholmod_triplet *T = cholmod_allocate_triplet(n, n, max_nnz, 0,
+                                                  CHOLMOD_REAL, &common);
+}
+
 }
 
 void FCCQP::Solve(
