@@ -1,6 +1,7 @@
 #include <Eigen/Dense>
 #include <tuple>
 #include <iostream>
+#include "SuiteSparseQR.hpp"
 
 namespace fcc_qp {
 
