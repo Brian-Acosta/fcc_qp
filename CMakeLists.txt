@@ -20,11 +20,13 @@ include(CPack)
 
 set(SRCS
     ${SOURCE_DIR}/fcc_qp.cpp
+    ${SOURCE_DIR}/spqr_solver.hpp
     )
 
 set(HEADERS
     ${SOURCE_DIR}/fcc_qp.hpp
-    )
+    ${SOURCE_DIR}/spqr_solver.hpp
+)
 
 include_directories(${EIGEN3_INCLUDE_DIR} ${CHOLMOD_INCLUDES} ${SPQR_INCLUDES})
 
