@@ -4,6 +4,12 @@
 #include "SuiteSparseQR.hpp"
 
 
+/// This file is currently unused because either
+/// - SuiteSparse QR (even the min2norm solve) is not accurate enough for the
+/// fcc_qp demo problems
+/// - there is a bug
+/// - both
+
 namespace fcc_qp {
 
 /// Wrapper for SuiteSparse workspace for solving KKT matrix

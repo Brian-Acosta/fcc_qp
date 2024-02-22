@@ -1,7 +1,6 @@
 #include <Eigen/Dense>
 #include <tuple>
 #include <iostream>
-#include "spqr_solver.hpp"
 
 namespace fcc_qp {
 
@@ -103,10 +102,6 @@ class FCCQP {
   // Decompositions
   Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_factorization_;
   Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_;
-
-  // These aren't working
-  //  SPQRSolver spqr_M_kkt_;
-  //  SPQRSolver spqr_M_kkt_pre_;
 
   // residuals
   VectorXd z_res_;
