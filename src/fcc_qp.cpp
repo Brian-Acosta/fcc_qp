@@ -1,5 +1,4 @@
 #include <chrono>
-#include <iostream>
 #include <Eigen/Dense>
 #include <vector>
 #include <tuple>
