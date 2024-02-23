@@ -54,7 +54,7 @@ class FCCQP {
 
   /*!
    * Solves the QP associated with the problem data
-   * @param A_eq linear equalityu constraints includeing dynamics,
+   * @param A_eq linear equality constraints including dynamics,
    * holonomic, and contact constraints
    * @param Q hessian of the cost on the stacked decision variables
    * @param q linear term of the cost on the stacked decision variables
