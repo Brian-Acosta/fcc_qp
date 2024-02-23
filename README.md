@@ -1,7 +1,2 @@
-# Custom ADMM based solver for Friction Cone Constrained QPs
-## Overview
-Optimization based control of legged robots often leads to the formation of reactive controllers in the form of Quadratic Programs. 
-
-```math
-\displaystyle u = \arg \min_{z = [\dot{v}, u, \lambda_{h}, \lambda_{c}}
-```
+# Custom ADMM based solver for Whole BOdy Control QPs with friction cone constraints. 
+See [fcc_qp.pdf](https://github.com/Brian-Acosta/fcc_qp/blob/main/fccqp.pdf) for details. 
