@@ -25,9 +25,11 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
     n_vars_(num_vars), n_eq_(num_equality_constraints), nc_(nc),
     lambda_c_start_(lambda_c_start) {
 
+  assert(n_vars_ >= 0);
+  assert(n_eq_ >= 0);
   assert(nc_ >= 0);
   assert(nc_ % 3 == 0);
-  assert(lambda_c_start <= n_vars_ - nc_);
+  assert(lambda_c_start_ + nc_ <= n_vars_);
 
   // Initialize workspace variables
   P_rho_ = rho_ * MatrixXd::Identity(n_vars_, n_vars_);
@@ -120,23 +122,25 @@ void FCCQP::Solve(
 
   auto start = std::chrono::high_resolution_clock::now();
 
+  // re-zero relevant matrices
   mu_z_.setZero();
   mu_lambda_c_.setZero();
-
   M_kkt_.setZero();
   M_kkt_pre_.setZero();
   b_kkt_.setZero();
 
+  // Assemble KKT system for pre-solve QP
   M_kkt_pre_.topLeftCorner(n_vars_, n_vars_) = Q;
   M_kkt_pre_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
   M_kkt_pre_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
-  M_kkt_ = M_kkt_pre_;
-  M_kkt_.topLeftCorner(n_vars_, n_vars_) += P_rho_;
-
   b_kkt_.head(n_vars_) = -b;
   b_kkt_.segment(n_vars_, n_eq_) = b_eq;
 
-  // presolve without rho
+  // Initialize KKT system for primal updates
+  M_kkt_ = M_kkt_pre_;
+  M_kkt_.topLeftCorner(n_vars_, n_vars_) += P_rho_;
+
+  // Factorize KKT matrices
   auto fact_start = std::chrono::high_resolution_clock::now();
   M_kkt_factorization_.compute(M_kkt_);
   M_kkt_pre_factorization_.compute(M_kkt_pre_);
@@ -145,32 +149,39 @@ void FCCQP::Solve(
   std::chrono::duration<double> fact_time = fact_end - fact_start;
   factorization_time_ = fact_time.count();
 
+  // Get initial guess by solving equality constrained QP
   z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
-
   z_bar_ = z_;
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
 
+  // ADMM iterations
   n_iter_ = max_iter_;
   for (int iter = 0; iter < max_iter_; ++iter) {
+    // Update KKT system RHS
     q_rho_ = -rho_ * (z_bar_ - mu_z_);
     q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
     b_kkt_.head(n_vars_) = -(b + q_rho_);
+
+    // Primal update - solve equality constrained QP
     kkt_sol_ = M_kkt_factorization_.solve(b_kkt_);
     z_ = kkt_sol_.head(n_vars_);
 
+    // Slack update - project to feasible set
     z_bar_ = project_to_bounds(z_ + mu_z_, lb, ub);
-
     lambda_c_bar_ = project_to_friction_cone(
         z_.segment(lambda_c_start_, nc_) + mu_lambda_c_, friction_coeffs);
 
+    // Calculate residual between primal and slack variables
     z_res_ = z_ - z_bar_;
     lambda_c_res_ = z_.segment(lambda_c_start_, nc_) - lambda_c_bar_;
     z_res_norm_ = z_res_.norm();
     lambda_c_res_norm_ = lambda_c_res_.norm();
 
+    // dual update
     mu_z_ += z_res_;
     mu_lambda_c_ += lambda_c_res_;
 
+    // check for convergence
     if (lambda_c_res_norm_ < eps_ and z_res_norm_ < eps_) {
       n_iter_ = iter;
       break;
