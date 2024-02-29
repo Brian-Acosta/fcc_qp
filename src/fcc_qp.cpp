@@ -114,43 +114,25 @@ double calc_bound_violation(
 
 }
 
-void FCCQP::Solve(
-    const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
-    const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
-    const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
-    const Ref<const VectorXd>& ub) {
-
-  auto start = std::chrono::high_resolution_clock::now();
+void FCCQP::DoADMM(
+    const Ref<const VectorXd> &b, const vector<double> &friction_coeffs,
+    const Ref<const VectorXd> &lb, const Ref<const VectorXd> &ub) {
 
   // re-zero relevant matrices
-  mu_z_.setZero();
-  mu_lambda_c_.setZero();
   M_kkt_.setZero();
-  M_kkt_pre_.setZero();
-  b_kkt_.setZero();
-
-  // Assemble KKT system for pre-solve QP
-  M_kkt_pre_.topLeftCorner(n_vars_, n_vars_) = Q;
-  M_kkt_pre_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
-  M_kkt_pre_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
-  b_kkt_.head(n_vars_) = -b;
-  b_kkt_.segment(n_vars_, n_eq_) = b_eq;
 
   // Initialize KKT system for primal updates
   M_kkt_ = M_kkt_pre_;
   M_kkt_.topLeftCorner(n_vars_, n_vars_) += P_rho_;
 
-  // Factorize KKT matrices
+  // Factorize KKT matrix
   auto fact_start = std::chrono::high_resolution_clock::now();
   M_kkt_factorization_.compute(M_kkt_);
-  M_kkt_pre_factorization_.compute(M_kkt_pre_);
-
   auto fact_end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> fact_time = fact_end - fact_start;
-  factorization_time_ = fact_time.count();
+  factorization_time_ += fact_time.count();
 
-  // Get initial guess by solving equality constrained QP
-  z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+  // Initialize slack to solution to equality constrained QP
   z_bar_ = z_;
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
 
@@ -186,6 +168,51 @@ void FCCQP::Solve(
       n_iter_ = iter;
       break;
     }
+  }
+
+
+}
+
+void FCCQP::Solve(
+    const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
+    const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
+    const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
+    const Ref<const VectorXd>& ub) {
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  bool equality_constrained =
+      nc_ == 0 and lb.array().isInf().all() and ub.array().isInf().all();
+
+  // re-zero relevant matrices
+  mu_z_.setZero();
+  mu_lambda_c_.setZero();
+  M_kkt_pre_.setZero();
+  b_kkt_.setZero();
+
+  // Assemble KKT system for pre-solve QP
+  M_kkt_pre_.topLeftCorner(n_vars_, n_vars_) = Q;
+  M_kkt_pre_.bottomLeftCorner(n_eq_, n_vars_) = A_eq;
+  M_kkt_pre_.topRightCorner(n_vars_, n_eq_) = A_eq.transpose();
+  b_kkt_.head(n_vars_) = -b;
+  b_kkt_.segment(n_vars_, n_eq_) = b_eq;
+
+  // Reset solve stats
+  factorization_time_ = 0;
+  n_iter_ = 0;
+
+  // Factorize Equality constrained QP matrix
+  auto fact_start = std::chrono::high_resolution_clock::now();
+  M_kkt_pre_factorization_.compute(M_kkt_pre_);
+  auto fact_end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> fact_time = fact_end - fact_start;
+  factorization_time_ += fact_time.count();
+
+  // Get initial guess by solving equality constrained QP
+  z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+
+  if (not equality_constrained) {
+    DoADMM(b, friction_coeffs, lb, ub);
   }
 
   auto end = std::chrono::high_resolution_clock::now();

@@ -70,9 +70,15 @@ class FCCQP {
              const vector<double>& friction_coeffs,
              const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
+
+
   FCCQPSolution GetSolution() const;
 
  private:
+
+  void DoADMM(const Ref<const VectorXd>& b,
+              const vector<double>& friction_coeffs,
+              const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
   double rho_ = 1e-1;
   double eps_ = 1e-6;
