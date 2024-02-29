@@ -118,9 +118,6 @@ void FCCQP::DoADMM(
     const Ref<const VectorXd> &b, const vector<double> &friction_coeffs,
     const Ref<const VectorXd> &lb, const Ref<const VectorXd> &ub) {
 
-  // re-zero relevant matrices
-  M_kkt_.setZero();
-
   // Initialize KKT system for primal updates
   M_kkt_ = M_kkt_pre_;
   M_kkt_.topLeftCorner(n_vars_, n_vars_) += P_rho_;
@@ -188,6 +185,7 @@ void FCCQP::Solve(
   mu_z_.setZero();
   mu_lambda_c_.setZero();
   M_kkt_pre_.setZero();
+  M_kkt_.setZero();
   b_kkt_.setZero();
 
   // Assemble KKT system for pre-solve QP
@@ -200,6 +198,8 @@ void FCCQP::Solve(
   // Reset solve stats
   factorization_time_ = 0;
   n_iter_ = 0;
+  z_res_norm_ = 0;
+  lambda_c_res_norm_ = 0;
 
   // Factorize Equality constrained QP matrix
   auto fact_start = std::chrono::high_resolution_clock::now();
@@ -227,8 +227,8 @@ void FCCQP::Solve(
 
 FCCQPSolution FCCQP::GetSolution() const {
   FCCQPSolution out;
-  out.details.eps_bounds = z_res_norm_;
-  out.details.eps_friction_cone = lambda_c_res_norm_;
+  out.details.admm_residual_bounds = z_res_norm_;
+  out.details.admm_residual_friction_cone = lambda_c_res_norm_;
   out.details.bounds_viol = bounds_viol_;
   out.details.friction_cone_viol = fricion_con_viol_;
   out.details.solve_time = solve_time_;

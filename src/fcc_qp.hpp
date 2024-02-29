@@ -17,8 +17,8 @@ enum FCCQPSolveStatus {
 
 struct FCCQPDetails {
   int n_iter{};
-  double eps_bounds{};
-  double eps_friction_cone{};
+  double admm_residual_bounds{};
+  double admm_residual_friction_cone{};
   double solve_time{};
   double factorization_time{};
   double bounds_viol{};
