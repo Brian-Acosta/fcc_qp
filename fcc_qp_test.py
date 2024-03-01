@@ -74,8 +74,8 @@ def main():
     # Dimensions of Cassie OSC problem
     solver = FCCQP(50, 38, 12, 38)
     solver.set_rho(1e-2)
-    solver.set_eps(1e-6)
-    solver.set_max_iter(100)
+    solver.set_eps(1e-10)
+    solver.set_max_iter(1000)
 
     results = []
     for i in range(len(qps)):

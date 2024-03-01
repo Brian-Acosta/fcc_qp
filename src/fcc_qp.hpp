@@ -52,6 +52,10 @@ class FCCQP {
     eps_ = eps;
   }
 
+  void set_warm_start(bool warm_start) {
+    warm_start_ = warm_start;
+  }
+
   /*!
    * Solves the QP associated with the problem data
    * @param A_eq linear equality constraints including dynamics,
@@ -88,6 +92,8 @@ class FCCQP {
   const int n_eq_;
   const int nc_;
   const int lambda_c_start_;
+
+  bool warm_start_ = false;
 
   // Solver workspace variables
   MatrixXd P_rho_; // Hessian of augmented lagrangian term

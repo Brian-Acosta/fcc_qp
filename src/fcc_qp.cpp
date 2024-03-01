@@ -153,8 +153,8 @@ void FCCQP::DoADMM(
     // Calculate residual between primal and slack variables
     z_res_ = z_ - z_bar_;
     lambda_c_res_ = z_.segment(lambda_c_start_, nc_) - lambda_c_bar_;
-    z_res_norm_ = z_res_.norm();
-    lambda_c_res_norm_ = lambda_c_res_.norm();
+    z_res_norm_ = abs(max(z_res_.maxCoeff(), -z_res_.minCoeff())) ;
+    lambda_c_res_norm_ = abs(max(lambda_c_res_.maxCoeff(), -lambda_c_res_.minCoeff()));
 
     // dual update
     mu_z_ += z_res_;
@@ -182,8 +182,11 @@ void FCCQP::Solve(
       nc_ == 0 and lb.array().isInf().all() and ub.array().isInf().all();
 
   // re-zero relevant matrices
-  mu_z_.setZero();
-  mu_lambda_c_.setZero();
+
+  if (not warm_start_) {
+    mu_z_.setZero();
+    mu_lambda_c_.setZero();
+  }
   M_kkt_pre_.setZero();
   M_kkt_.setZero();
   b_kkt_.setZero();
@@ -202,14 +205,17 @@ void FCCQP::Solve(
   lambda_c_res_norm_ = 0;
 
   // Factorize Equality constrained QP matrix
-  auto fact_start = std::chrono::high_resolution_clock::now();
-  M_kkt_pre_factorization_.compute(M_kkt_pre_);
-  auto fact_end = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> fact_time = fact_end - fact_start;
-  factorization_time_ += fact_time.count();
 
-  // Get initial guess by solving equality constrained QP
-  z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+  if (not warm_start_ or equality_constrained) {
+    auto fact_start = std::chrono::high_resolution_clock::now();
+    M_kkt_pre_factorization_.compute(M_kkt_pre_);
+    auto fact_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> fact_time = fact_end - fact_start;
+    factorization_time_ += fact_time.count();
+
+    // Get initial guess by solving equality constrained QP
+    z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+  }
 
   if (not equality_constrained) {
     DoADMM(b, friction_coeffs, lb, ub);
