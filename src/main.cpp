@@ -38,6 +38,7 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
         .def("set_rho", &FCCQP::set_rho)
         .def("set_max_iter", &FCCQP::set_max_iter)
         .def("set_eps", &FCCQP::set_eps)
+        .def("set_warm_start", &FCCQP::set_warm_start)
         .def("Solve",
              &FCCQP::Solve,
              py::arg("Q"), py::arg("b"), py::arg("A_eq"), py::arg("b_eq"),
