@@ -78,6 +78,8 @@ class FCCQP {
 
   FCCQPSolution GetSolution() const;
 
+  int contact_vars_start() const {return lambda_c_start_;}
+
  private:
 
   void DoADMM(const Ref<const VectorXd>& b,
