@@ -205,8 +205,7 @@ void FCCQP::Solve(
   lambda_c_res_norm_ = 0;
 
   // Factorize Equality constrained QP matrix
-
-  if (not warm_start_ or equality_constrained) {
+  if (equality_constrained or not warm_start_) {
     auto fact_start = std::chrono::high_resolution_clock::now();
     M_kkt_pre_factorization_.compute(M_kkt_pre_);
     auto fact_end = std::chrono::high_resolution_clock::now();
