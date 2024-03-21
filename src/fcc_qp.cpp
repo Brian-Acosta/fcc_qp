@@ -40,7 +40,6 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
   M_kkt_pre_ = MatrixXd::Zero(N, N);
   M_kkt_factorization_ = Eigen::LDLT<MatrixXd>();
   M_kkt_pre_factorization_ = Eigen::LDLT<MatrixXd>();
-  M_kkt_factorization_backup_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
   M_kkt_pre_factorization_backup_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
 
   b_kkt_ = VectorXd::Zero(N);
@@ -212,7 +211,7 @@ void FCCQP::Solve(
     M_kkt_pre_factorization_.compute(M_kkt_pre_);
 
     if (M_kkt_pre_factorization_.info() != Eigen::Success) {
-      M_kkt_factorization_backup_.compute(M_kkt_pre_);
+      M_kkt_pre_factorization_backup_.compute(M_kkt_pre_);
     }
 
     auto fact_end = std::chrono::high_resolution_clock::now();
@@ -223,7 +222,7 @@ void FCCQP::Solve(
     if (M_kkt_pre_factorization_.info() == Eigen::Success) {
       z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
     } else {
-      z_ = M_kkt_pre_factorization_backup_.solve(b_kkt_);
+      z_ = M_kkt_pre_factorization_backup_.solve(b_kkt_).head(n_vars_);
     }
 
   }
