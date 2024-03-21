@@ -224,7 +224,6 @@ void FCCQP::Solve(
     } else {
       z_ = M_kkt_pre_factorization_backup_.solve(b_kkt_).head(n_vars_);
     }
-
   }
 
   if (not equality_constrained) {
