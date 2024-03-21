@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ def solve(qp, solver):
     return result
 
 
-@mpl.rc_context({'lines.linewidth': 4})
+@mpl.rc_context({'lines.linewidth': 2})
 def plot_variable(name, val, idx, ylabel, ax):
     ax.plot(idx, val)
     ax.set_title(name)
@@ -69,15 +70,17 @@ def make_plots(results):
 
 
 def main():
-    qps = load_qp_matrices('walking')
+    np.set_printoptions(threshold=sys.maxsize, precision=1)
+    qps = load_qp_matrices('walking_reg')
 
     # Dimensions of Cassie OSC problem
-    solver = FCCQP(50, 38, 12, 38)
-    solver.set_rho(1e-2)
-    solver.set_eps(1e-10)
-    solver.set_max_iter(1000)
+    solver = FCCQP(60, 38, 12, 38)
+    solver.set_rho(8e-5)
+    solver.set_eps(1e-4)
+    solver.set_max_iter(100)
 
     results = []
+    solver.set_warm_start(True)
     for i in range(len(qps)):
         result = solve(qps[i], solver)
         results.append(result)

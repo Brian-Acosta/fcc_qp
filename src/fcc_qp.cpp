@@ -38,8 +38,10 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
   int N = n_vars_ + n_eq_;
   M_kkt_ = MatrixXd::Zero(N,N);
   M_kkt_pre_ = MatrixXd::Zero(N, N);
-  M_kkt_factorization_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
-  M_kkt_pre_factorization_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
+  M_kkt_factorization_ = Eigen::LDLT<MatrixXd>();
+  M_kkt_pre_factorization_ = Eigen::LDLT<MatrixXd>();
+  M_kkt_factorization_backup_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
+  M_kkt_pre_factorization_backup_ = CompleteOrthogonalDecomposition<MatrixXd>(N, N);
 
   b_kkt_ = VectorXd::Zero(N);
   kkt_sol_ = VectorXd::Zero(N);
@@ -208,12 +210,22 @@ void FCCQP::Solve(
   if (equality_constrained or not warm_start_) {
     auto fact_start = std::chrono::high_resolution_clock::now();
     M_kkt_pre_factorization_.compute(M_kkt_pre_);
+
+    if (M_kkt_pre_factorization_.info() != Eigen::Success) {
+      M_kkt_factorization_backup_.compute(M_kkt_pre_);
+    }
+
     auto fact_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> fact_time = fact_end - fact_start;
     factorization_time_ += fact_time.count();
 
     // Get initial guess by solving equality constrained QP
-    z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+    if (M_kkt_pre_factorization_.info() == Eigen::Success) {
+      z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
+    } else {
+      z_ = M_kkt_pre_factorization_backup_.solve(b_kkt_);
+    }
+
   }
 
   if (not equality_constrained) {

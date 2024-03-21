@@ -91,9 +91,9 @@ class FCCQP {
   int max_iter_ = 100;
 
   const int n_vars_;
-  const int n_eq_;
   const int nc_;
   const int lambda_c_start_;
+  int n_eq_;
 
   bool warm_start_ = false;
 
@@ -114,8 +114,9 @@ class FCCQP {
   VectorXd mu_lambda_c_;  // Dual for lambda_c = lambda_c_bar constraint
 
   // Decompositions
-  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_factorization_;
-  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_;
+  Eigen::LDLT<MatrixXd> M_kkt_factorization_;
+  Eigen::LDLT<MatrixXd> M_kkt_pre_factorization_;
+  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_backup_;
 
   // residuals
   VectorXd z_res_;
