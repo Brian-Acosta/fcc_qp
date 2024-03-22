@@ -97,8 +97,6 @@ class FCCQP {
 
   bool warm_start_ = false;
 
-  bool warm_start_ = false;
-
   // Solver workspace variables
   MatrixXd P_rho_; // Hessian of augmented lagrangian term
   VectorXd q_rho_; // augmented lagrangian cost linear term
