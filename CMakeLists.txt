@@ -17,10 +17,12 @@ include(CPack)
 
 set(SRCS
     ${SOURCE_DIR}/fcc_qp.cpp
+    ${SOURCE_DIR}/linalg.cpp
 )
 
 set(HEADERS
     ${SOURCE_DIR}/fcc_qp.hpp
+    ${SOURCE_DIR}/linalg.hpp
 )
 
 include_directories(

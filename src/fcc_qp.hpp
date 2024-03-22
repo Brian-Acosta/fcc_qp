@@ -1,5 +1,5 @@
 #pragma once
-#include <Eigen/Dense>
+#include "linalg.hpp"
 #include <tuple>
 #include <iostream>
 
@@ -83,7 +83,8 @@ class FCCQP {
 
  private:
 
-  void DoADMM(const Ref<const VectorXd>& b,
+  void DoADMM(const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
+              const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
               const vector<double>& friction_coeffs,
               const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
@@ -102,12 +103,7 @@ class FCCQP {
   MatrixXd P_rho_; // Hessian of augmented lagrangian term
   VectorXd q_rho_; // augmented lagrangian cost linear term
 
-  MatrixXd M_kkt_;     // KKT matrix for admm update
-  MatrixXd M_kkt_pre_; // KKT matrix for presolve equality constrained qp
-  VectorXd b_kkt_;     // KKT right hand side
-
   // Variables
-  VectorXd kkt_sol_;      // primal and equality duals from stage 1 primal solve
   VectorXd z_;            // stacked variables z = [dv, u, lambda_h, lambda_c]
   VectorXd z_bar_;        // ADMM copy of z
   VectorXd lambda_c_bar_; // ADMM copy of lambda_c
@@ -115,9 +111,8 @@ class FCCQP {
   VectorXd mu_lambda_c_;  // Dual for lambda_c = lambda_c_bar constraint
 
   // Decompositions
-  Eigen::LDLT<MatrixXd> M_kkt_factorization_;
-  Eigen::LDLT<MatrixXd> M_kkt_pre_factorization_;
-  Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_backup_;
+  KKTSolver kkt_solver_;
+  KKTSolver kkt_pre_solver_;
 
   // residuals
   VectorXd z_res_;
