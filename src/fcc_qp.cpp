@@ -210,7 +210,8 @@ void FCCQP::Solve(
     auto fact_start = std::chrono::high_resolution_clock::now();
     M_kkt_pre_factorization_.compute(M_kkt_pre_);
 
-    if (M_kkt_pre_factorization_.info() != Eigen::Success) {
+    if (M_kkt_pre_factorization_.info() != Eigen::Success or
+        equality_constrained) {
       M_kkt_pre_factorization_backup_.compute(M_kkt_pre_);
     }
 
@@ -219,7 +220,8 @@ void FCCQP::Solve(
     factorization_time_ += fact_time.count();
 
     // Get initial guess by solving equality constrained QP
-    if (M_kkt_pre_factorization_.info() == Eigen::Success) {
+    if (M_kkt_pre_factorization_.info() == Eigen::Success and not
+        equality_constrained) {
       z_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
     } else {
       z_ = M_kkt_pre_factorization_backup_.solve(b_kkt_).head(n_vars_);
