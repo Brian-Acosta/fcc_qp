@@ -29,6 +29,8 @@ def solve(qp, solver):
         qp['Q'], qp['b'], qp['A_eq'], qp['b_eq'], qp['friction_coeffs'],
         qp['lb'], qp['ub'])
     result = solver.GetSolution()
+    if result.details.n_iter > 10:
+        import pdb; pdb.set_trace()
     return result
 
 
@@ -81,6 +83,7 @@ def main():
 
     results = []
     for i in range(len(qps)):
+        solver.set_warm_start(i > 0)
         result = solve(qps[i], solver)
         results.append(result)
 

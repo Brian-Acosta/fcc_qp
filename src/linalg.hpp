@@ -15,8 +15,9 @@ class KKTSolver {
  private:
   const int n_;
   const int n_eq_;
-  Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> reduced_hessian_solver_;
-  Eigen::FullPivHouseholderQR<Eigen::MatrixXd> constraint_solver_;
+  Eigen::LDLT<Eigen::MatrixXd> reduced_hessian_solver_;
+  Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> constraint_solver_;
+  Eigen::LDLT<Eigen::MatrixXd> full_kkt_solver_;
   Eigen::MatrixXd constraint_kernel_;
   Eigen::MatrixXd Q_;
 };
