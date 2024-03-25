@@ -15,7 +15,7 @@ namespace fcc_qp {
 
 using Eigen::VectorXd;
 using Eigen::Vector3d;
-using Eigen::MatrixXd;
+using Eigen::MatrixX3d;
 using Eigen::BDCSVD;
 using Eigen::CompleteOrthogonalDecomposition;
 using Eigen::Ref;
@@ -86,6 +86,16 @@ VectorXd project_to_friction_cone(
   return out;
 }
 
+MatrixX3d get_active_ray_constraint_matrix(const Vector3d& f, double mu) {
+  Vector3d cone_ray = project_to_friction_cone(f, mu).normalized();
+  MatrixX3d M = MatrixX3d::Zero(2,3);
+  M.row(0)(0) = cone_ray(1);
+  M.row(0)(1) = -cone_ray(0);
+  M.row(1) = M.row(0).transpose().cross(cone_ray).transpose();
+  return M;
+}
+
+
 VectorXd project_to_bounds(
     const VectorXd& x, const VectorXd& lb, const VectorXd& ub) {
   VectorXd out(x.rows());
@@ -106,6 +116,37 @@ double calc_friction_cone_violation(
     violation += max(0., f.segment<2>(start).norm() -mu * fz);
   }
   return violation;
+}
+
+vector<int> guess_active_friction_cone_constraints(
+    const VectorXd& f, const vector<double>& friction_coeffs) {
+  vector<int> indices;
+  for (int i = 0; i < f.rows() / 3; ++i) {
+    int start = 3*i;
+    double fz = f(start + 2);
+    double mu = friction_coeffs.at(i);
+    double violation = max(0., f.segment<2>(start).norm() -mu * fz);
+    if (violation > 0) {
+      indices.push_back(i);
+    }
+  }
+  return indices;
+}
+
+MatrixXd get_active_set_friction_constraint(
+    const VectorXd& f, const vector<double>& friction_coeffs) {
+  vector<int> active_indices = guess_active_friction_cone_constraints(
+      f, friction_coeffs);
+
+  MatrixXd A = MatrixXd::Zero(2 * active_indices.size(), f.rows());
+  for(int i = 0; i < active_indices.size(); ++i) {
+    int idx = active_indices.at(i);
+    A.block<2, 3>(i * 2, idx * 3) = get_active_ray_constraint_matrix(
+        f.segment<3>(idx * 3),
+        friction_coeffs.at(idx)
+    );
+  }
+  return A;
 }
 
 double calc_bound_violation(
@@ -167,7 +208,6 @@ void FCCQP::DoADMM(
       break;
     }
   }
-
 
 }
 
@@ -232,13 +272,32 @@ void FCCQP::Solve(
     DoADMM(b, friction_coeffs, lb, ub);
   }
 
-  auto end = std::chrono::high_resolution_clock::now();
-
-  std::chrono::duration<double> solve_time = end - start;
-  solve_time_ = solve_time.count();
   bounds_viol_ = calc_bound_violation(z_, lb, ub);
   fricion_con_viol_ = calc_friction_cone_violation(
       z_.segment(lambda_c_start_, nc_), friction_coeffs);
+
+  // TODO (@Brian-Acosta) Figure out why LDLT isn't working the solution polish
+  //  (and do we need it?)
+//  if (fricion_con_viol_ > 10 * eps_) {
+//    MatrixXd A_fcone = get_active_set_friction_constraint(
+//        z_.segment(lambda_c_start_, nc_), friction_coeffs
+//    );
+//
+//    int n = n_vars_ + n_eq_;
+//    MatrixXd M = MatrixXd::Zero(n + A_fcone.rows(), n + A_fcone.rows());
+//    M.topLeftCorner(n, n) = M_kkt_pre_;
+//    M.block(n, lambda_c_start_, A_fcone.rows(), A_fcone.cols()) = A_fcone;
+//    M.block(lambda_c_start_, n, A_fcone.cols(), A_fcone.rows()) =
+//        A_fcone.transpose();
+//    VectorXd b_kkt_ext = VectorXd::Zero(n + A_fcone.rows());
+//    b_kkt_ext.head(n_vars_) = -b;
+//    b_kkt_ext.segment(n_vars_, n_eq_) = b_eq;
+//    z_ = M.completeOrthogonalDecomposition().solve(b_kkt_ext).head(n_vars_);
+//  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> solve_time = end - start;
+  solve_time_ = solve_time.count();
 
 }
 

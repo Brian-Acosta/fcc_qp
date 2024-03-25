@@ -71,13 +71,13 @@ def make_plots(results):
 
 def main():
     np.set_printoptions(threshold=sys.maxsize, precision=1)
-    qps = load_qp_matrices('walking_reg')
+    qps = load_qp_matrices('walking')
 
     # Dimensions of Cassie OSC problem
-    solver = FCCQP(60, 38, 12, 38)
+    solver = FCCQP(50, 38, 12, 38)
     solver.set_rho(1e-5)
     solver.set_eps(1e-6)
-    solver.set_max_iter(1000)
+    solver.set_max_iter(10)
 
     results = []
     for i in range(len(qps)):
