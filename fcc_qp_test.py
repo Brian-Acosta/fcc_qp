@@ -72,7 +72,7 @@ def make_plots(results):
 def main():
     np.set_printoptions(threshold=sys.maxsize, precision=1)
 
-    dataset = 'walking_reg'
+    dataset = 'running'
     nvar = 60 if dataset == 'walking_reg' else 50
 
     qps = load_qp_matrices(dataset)
