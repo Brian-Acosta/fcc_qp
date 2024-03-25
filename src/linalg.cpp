@@ -26,20 +26,17 @@ void KKTSolver::compute(const MatrixXd& Q, const MatrixXd& A_eq) {
   long rank = constraint_solver_.rank();
   MatrixXd Z = constraint_solver_.matrixZ() * constraint_solver_
       .colsPermutation().inverse();
-  MatrixXd N = Z.bottomRows(n_ - rank).transpose();
-
-  MatrixXd kkt = MatrixXd::Zero(n_ + n_eq_, n_ + n_eq_);
-  kkt.topLeftCorner(n_, n_) = Q;
-  kkt.topRightCorner(n_, n_eq_) = A_eq.transpose();
-  kkt.bottomLeftCorner(n_eq_, n_) = A_eq;
-  full_kkt_solver_.compute(kkt);
+  constraint_kernel_ = Z.bottomRows(n_ - rank).transpose();
+  reduced_hessian_solver_.compute(
+      constraint_kernel_.transpose() * Q * constraint_kernel_);
+  Q_ = Q;
 }
 
 VectorXd KKTSolver::solve(const VectorXd &b, const VectorXd &b_eq) const {
-  VectorXd b_kkt = VectorXd::Zero(n_ + n_eq_);
-  b_kkt.head(n_) = -b;
-  b_kkt.tail(n_eq_) = b_eq;
-  return full_kkt_solver_.solve(b_kkt).head(n_);
+  VectorXd x = constraint_solver_.solve(b_eq);
+  VectorXd rhs = -constraint_kernel_.transpose() * (Q_ * x + b);
+  VectorXd z = reduced_hessian_solver_.solve(rhs);
+  return  constraint_kernel_ * z + x;
 }
 
 }
