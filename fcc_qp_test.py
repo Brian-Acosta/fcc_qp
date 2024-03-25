@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from fcc_qp import FCCQP, FCCQPSolution
+from fcc_qp import FCCQP, FCCQPSolution, FCCQPOptions
 
 
 SMALL_SIZE = 20
@@ -71,13 +71,20 @@ def make_plots(results):
 
 def main():
     np.set_printoptions(threshold=sys.maxsize, precision=1)
-    qps = load_qp_matrices('walking')
+
+    dataset = 'running'
+    nvar = 60 if dataset == 'walking_reg' else 50
+    qps = load_qp_matrices(dataset)
 
     # Dimensions of Cassie OSC problem
-    solver = FCCQP(50, 38, 12, 38)
-    solver.set_rho(1e-5)
-    solver.set_eps(1e-6)
-    solver.set_max_iter(10)
+    solver = FCCQP(nvar, 38, 12, 38)
+    options = FCCQPOptions()
+    options.rho = 1e-6
+    options.eps_fcone = 1e-4
+    options.eps_bound = 1e-4
+    options.max_iter = 20
+    options.polish = True
+    solver.set_options(options)
 
     results = []
     for i in range(len(qps)):

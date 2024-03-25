@@ -2,20 +2,19 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <tuple>
-#include "fcc_qp.hpp"
 #include <cassert>
+#include "fcc_qp.hpp"
+#include "constraint_utils.hpp"
 
 using std::abs;
-using std::sqrt;
 using std::max;
-using std::min;
+using std::sqrt;
 using std::vector;
 
 namespace fcc_qp {
 
 using Eigen::VectorXd;
-using Eigen::Vector3d;
-using Eigen::MatrixX3d;
+using Eigen::MatrixXd;
 using Eigen::BDCSVD;
 using Eigen::CompleteOrthogonalDecomposition;
 using Eigen::Ref;
@@ -32,7 +31,7 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
   assert(lambda_c_start_ + nc_ <= n_vars_);
 
   // Initialize workspace variables
-  P_rho_ = rho_ * MatrixXd::Identity(n_vars_, n_vars_);
+  P_rho_ = options_.rho * MatrixXd::Identity(n_vars_, n_vars_);
   q_rho_ = VectorXd::Zero(n_vars_);
 
   int N = n_vars_ + n_eq_;
@@ -53,107 +52,9 @@ FCCQP::FCCQP(int num_vars, int num_equality_constraints,
   lambda_c_res_ = VectorXd::Zero(nc_);
 }
 
-namespace {
-
-Vector3d project_to_friction_cone(const Vector3d& f, double mu) {
-  double norm_fxy = f.head<2>().norm();
-
-  // inside the friction cone, do nothing
-  if (mu * f(2) >=  norm_fxy) {
-    return f;
-  }
-
-  // More than 90 degrees from the side of the cone, closest point is the origin
-  if (f(2) < -mu * norm_fxy) {
-    return Vector3d::Zero();
-  }
-
-  // project up to the side of the friction cone
-  double xy_ratio = mu * f(2)  / norm_fxy;
-  Vector3d cone_ray(xy_ratio * f(0), xy_ratio * f(1), f(2));
-  cone_ray.normalize();
-  return cone_ray.dot(f) * cone_ray;
-
-}
-
-VectorXd project_to_friction_cone(
-    const VectorXd& f, const vector<double>& friction_coeffs) {
-  VectorXd out = VectorXd::Zero(f.rows());
-  for (int i = 0; i < f.rows() / 3; ++i) {
-    out.segment<3>(3*i) = project_to_friction_cone(
-        f.segment<3>(3*i), friction_coeffs.at(i));
-  }
-  return out;
-}
-
-MatrixX3d get_active_ray_constraint_matrix(const Vector3d& f, double mu) {
-  Vector3d cone_ray = project_to_friction_cone(f, mu).normalized();
-  MatrixX3d M = MatrixX3d::Zero(2,3);
-  M.row(0)(0) = cone_ray(1);
-  M.row(0)(1) = -cone_ray(0);
-  M.row(1) = M.row(0).transpose().cross(cone_ray).transpose();
-  return M;
-}
-
-
-VectorXd project_to_bounds(
-    const VectorXd& x, const VectorXd& lb, const VectorXd& ub) {
-  VectorXd out(x.rows());
-  for (int i = 0; i < x.rows(); ++i) {
-    out(i) = max(min(x(i), ub(i)), lb(i));
-  }
-  return out;
-}
-
-double calc_friction_cone_violation(
-    const VectorXd& f, const vector<double>& friction_coeffs) {
-  double violation = 0;
-
-  for (int i = 0; i < f.rows() / 3; ++i) {
-    int start = 3*i;
-    double fz = f(start + 2);
-    double mu = friction_coeffs.at(i);
-    violation += max(0., f.segment<2>(start).norm() -mu * fz);
-  }
-  return violation;
-}
-
-vector<int> guess_active_friction_cone_constraints(
-    const VectorXd& f, const vector<double>& friction_coeffs) {
-  vector<int> indices;
-  for (int i = 0; i < f.rows() / 3; ++i) {
-    int start = 3*i;
-    double fz = f(start + 2);
-    double mu = friction_coeffs.at(i);
-    double violation = max(0., f.segment<2>(start).norm() -mu * fz);
-    if (violation > 0) {
-      indices.push_back(i);
-    }
-  }
-  return indices;
-}
-
-MatrixXd get_active_set_friction_constraint(
-    const VectorXd& f, const vector<double>& friction_coeffs) {
-  vector<int> active_indices = guess_active_friction_cone_constraints(
-      f, friction_coeffs);
-
-  MatrixXd A = MatrixXd::Zero(2 * active_indices.size(), f.rows());
-  for(int i = 0; i < active_indices.size(); ++i) {
-    int idx = active_indices.at(i);
-    A.block<2, 3>(i * 2, idx * 3) = get_active_ray_constraint_matrix(
-        f.segment<3>(idx * 3),
-        friction_coeffs.at(idx)
-    );
-  }
-  return A;
-}
-
 double calc_bound_violation(
     const VectorXd& x, const VectorXd& lb, const VectorXd& ub) {
   return (x - project_to_bounds(x, lb, ub)).norm();
-}
-
 }
 
 void FCCQP::DoADMM(
@@ -176,11 +77,11 @@ void FCCQP::DoADMM(
   lambda_c_bar_ = z_.segment(lambda_c_start_, nc_);
 
   // ADMM iterations
-  n_iter_ = max_iter_;
-  for (int iter = 0; iter < max_iter_; ++iter) {
+  n_iter_ = options_.max_iter;
+  for (int iter = 0; iter < options_.max_iter; ++iter) {
     // Update KKT system RHS
-    q_rho_ = -rho_ * (z_bar_ - mu_z_);
-    q_rho_.segment(lambda_c_start_, nc_) = -rho_ * (lambda_c_bar_ - mu_lambda_c_);
+    q_rho_ = -options_.rho * (z_bar_ - mu_z_);
+    q_rho_.segment(lambda_c_start_, nc_) = -options_.rho * (lambda_c_bar_ - mu_lambda_c_);
     b_kkt_.head(n_vars_) = -(b + q_rho_);
 
     // Primal update - solve equality constrained QP
@@ -203,7 +104,8 @@ void FCCQP::DoADMM(
     mu_lambda_c_ += lambda_c_res_;
 
     // check for convergence
-    if (lambda_c_res_norm_ < eps_ and z_res_norm_ < eps_) {
+    if (lambda_c_res_norm_ < options_.eps_fcone and
+        z_res_norm_ < options_.eps_bound) {
       n_iter_ = iter;
       break;
     }
@@ -218,6 +120,8 @@ void FCCQP::Solve(
     const Ref<const VectorXd>& ub) {
 
   auto start = std::chrono::high_resolution_clock::now();
+
+  assert(validate_bounds(lb, ub));
 
   bool equality_constrained =
       nc_ == 0 and lb.array().isInf().all() and ub.array().isInf().all();
@@ -273,32 +177,54 @@ void FCCQP::Solve(
   }
 
   bounds_viol_ = calc_bound_violation(z_, lb, ub);
-  fricion_con_viol_ = calc_friction_cone_violation(
+  fricion_cone_viol_ = calc_friction_cone_violation(
       z_.segment(lambda_c_start_, nc_), friction_coeffs);
 
-  // TODO (@Brian-Acosta) Figure out why LDLT isn't working the solution polish
-  //  (and do we need it?)
-//  if (fricion_con_viol_ > 10 * eps_) {
-//    MatrixXd A_fcone = get_active_set_friction_constraint(
-//        z_.segment(lambda_c_start_, nc_), friction_coeffs
-//    );
-//
-//    int n = n_vars_ + n_eq_;
-//    MatrixXd M = MatrixXd::Zero(n + A_fcone.rows(), n + A_fcone.rows());
-//    M.topLeftCorner(n, n) = M_kkt_pre_;
-//    M.block(n, lambda_c_start_, A_fcone.rows(), A_fcone.cols()) = A_fcone;
-//    M.block(lambda_c_start_, n, A_fcone.cols(), A_fcone.rows()) =
-//        A_fcone.transpose();
-//    VectorXd b_kkt_ext = VectorXd::Zero(n + A_fcone.rows());
-//    b_kkt_ext.head(n_vars_) = -b;
-//    b_kkt_ext.segment(n_vars_, n_eq_) = b_eq;
-//    z_ = M.completeOrthogonalDecomposition().solve(b_kkt_ext).head(n_vars_);
-//  }
-
+  if (options_.polish) {
+    Polish(b, b_eq, friction_coeffs, lb, ub);
+  }
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> solve_time = end - start;
   solve_time_ = solve_time.count();
+}
 
+void FCCQP::Polish(const Ref<const VectorXd> &b, const Ref<const VectorXd> &b_eq,
+                   const vector<double> &friction_coeffs,
+                   const Ref<const VectorXd> &lb, const Ref<const VectorXd> &ub) {
+
+  if (fricion_cone_viol_ < options_.eps_fcone and bounds_viol_ < options_.eps_bound) {
+    return;
+  }
+
+  MatrixXd A_fcone = get_active_set_friction_constraint(
+      z_.segment(lambda_c_start_, nc_), friction_coeffs
+  );
+  std::pair<MatrixXd, VectorXd> Abb = get_active_set_bounds_constraint(z_, lb, ub);
+
+  const MatrixXd& A_b = Abb.first;
+  const VectorXd& b_b = Abb.second;
+
+  int n = n_vars_ + n_eq_;
+  int n_fc = A_fcone.rows();
+  int n_b = A_b.rows();
+
+  MatrixXd M = MatrixXd::Zero(n + n_fc + n_b, n + n_fc + n_b);
+
+  M.topLeftCorner(n, n) = M_kkt_pre_;
+  M.topLeftCorner(n_vars_, n_vars_) +=
+      options_.delta_polish * MatrixXd::Identity(n_vars_, n_vars_);
+
+  M.block(n, lambda_c_start_, A_fcone.rows(), A_fcone.cols()) = A_fcone;
+  M.block(lambda_c_start_, n, A_fcone.cols(), A_fcone.rows()) =
+      A_fcone.transpose();
+  M.block(n + n_fc, 0, n_b, n_vars_) = A_b;
+  M.block(0, n + n_fc, n_vars_, n_b) = A_b.transpose();
+
+  VectorXd b_kkt_ext = VectorXd::Zero(n + n_fc + n_b);
+  b_kkt_ext.head(n_vars_) = -b;
+  b_kkt_ext.segment(n_vars_, n_eq_) = b_eq;
+  b_kkt_ext.tail(n_b) = b_b;
+  z_ = M.ldlt().solve(b_kkt_ext).head(n_vars_);
 }
 
 FCCQPSolution FCCQP::GetSolution() const {
@@ -306,7 +232,7 @@ FCCQPSolution FCCQP::GetSolution() const {
   out.details.admm_residual_bounds = z_res_norm_;
   out.details.admm_residual_friction_cone = lambda_c_res_norm_;
   out.details.bounds_viol = bounds_viol_;
-  out.details.friction_cone_viol = fricion_con_viol_;
+  out.details.friction_cone_viol = fricion_cone_viol_;
   out.details.solve_time = solve_time_;
   out.details.factorization_time = factorization_time_;
   out.details.n_iter = n_iter_;

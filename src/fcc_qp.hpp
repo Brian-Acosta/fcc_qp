@@ -27,6 +27,15 @@ struct FCCQPDetails {
   FCCQPSolveStatus solve_status;
 };
 
+struct FCCQPOptions {
+  int max_iter = 1000;
+  bool polish = true;
+  double rho = 1e-6;
+  double eps_fcone = 1e-3;
+  double eps_bound = 1e-6;
+  double delta_polish = 1e-10;
+};
+
 struct FCCQPSolution {
   FCCQPDetails details{};
   VectorXd z;
@@ -39,18 +48,17 @@ class FCCQP {
 
   void set_rho(double rho) {
     assert(rho > 0);
-    rho_ = rho;
-    P_rho_ = rho_ * MatrixXd::Identity(n_vars_, n_vars_);
+    options_.rho = rho;
+    P_rho_ = rho * MatrixXd::Identity(n_vars_, n_vars_);
   }
 
   void set_max_iter(int n) {
     assert(n > 0);
-    max_iter_ = n;
+    options_.max_iter = n;
   }
 
-  void set_eps(double eps) {
-    assert(eps > 0);
-    eps_ = eps;
+  void set_options(FCCQPOptions opt) {
+    options_ = opt;
   }
 
   void set_warm_start(bool warm_start) {
@@ -75,8 +83,6 @@ class FCCQP {
              const vector<double>& friction_coeffs,
              const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
-
-
   FCCQPSolution GetSolution() const;
 
   int contact_vars_start() const {return lambda_c_start_;}
@@ -87,9 +93,12 @@ class FCCQP {
               const vector<double>& friction_coeffs,
               const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
 
-  double rho_ = 1e-1;
-  double eps_ = 1e-6;
-  int max_iter_ = 100;
+  void Polish(const Ref<const VectorXd>& b, const Ref<const VectorXd>& b_eq,
+              const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
+              const Ref<const VectorXd>& ub);
+
+
+  FCCQPOptions options_;
 
   const int n_vars_;
   const int nc_;
@@ -125,7 +134,7 @@ class FCCQP {
   double z_res_norm_{};
   double lambda_c_res_norm_{};
   double bounds_viol_{};
-  double fricion_con_viol_{};
+  double fricion_cone_viol_{};
 
   // solve info
   int n_iter_{};

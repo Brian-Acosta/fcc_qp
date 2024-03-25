@@ -13,6 +13,7 @@ using namespace std;
 
 using fcc_qp::FCCQP;
 using fcc_qp::FCCQPSolution;
+using fcc_qp::FCCQPOptions;
 using fcc_qp::FCCQPDetails;
 
 PYBIND11_MODULE(fcc_qp_solver, m) {
@@ -27,6 +28,15 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
         .def_readwrite("solve_time", &FCCQPDetails::solve_time)
         .def_readwrite("factorization_time", &FCCQPDetails::factorization_time);
 
+    py::class_<FCCQPOptions>(m, "FCCQPOptions")
+        .def(py::init<>())
+        .def_readwrite("max_iter", &FCCQPOptions::max_iter)
+        .def_readwrite("polish", &FCCQPOptions::polish)
+        .def_readwrite("rho", &FCCQPOptions::rho)
+        .def_readwrite("eps_fcone", &FCCQPOptions::eps_fcone)
+        .def_readwrite("eps_bound", &FCCQPOptions::eps_bound)
+        .def_readwrite("delta_polish", &FCCQPOptions::delta_polish);
+
     py::class_<FCCQPSolution>(m, "FCCQPSolution")
         .def_readwrite("details", &FCCQPSolution::details)
         .def_readwrite("z", &FCCQPSolution::z);
@@ -37,8 +47,8 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
             py::arg("nc"), py::arg("lambda_c_start"))
         .def("set_rho", &FCCQP::set_rho)
         .def("set_max_iter", &FCCQP::set_max_iter)
-        .def("set_eps", &FCCQP::set_eps)
         .def("set_warm_start", &FCCQP::set_warm_start)
+        .def("set_options", &FCCQP::set_options)
         .def("Solve",
              &FCCQP::Solve,
              py::arg("Q"), py::arg("b"), py::arg("A_eq"), py::arg("b_eq"),

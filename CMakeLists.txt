@@ -21,6 +21,7 @@ set(SRCS
 
 set(HEADERS
     ${SOURCE_DIR}/fcc_qp.hpp
+    ${SOURCE_DIR}/constraint_utils.hpp
 )
 
 include_directories(
