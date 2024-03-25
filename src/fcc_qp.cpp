@@ -132,6 +132,8 @@ void FCCQP::Solve(
     mu_z_.setZero();
     mu_lambda_c_.setZero();
   }
+  P_rho_ = options_.rho * MatrixXd::Identity(n_vars_, n_vars_);
+
   M_kkt_pre_.setZero();
   M_kkt_.setZero();
   b_kkt_.setZero();
@@ -177,7 +179,7 @@ void FCCQP::Solve(
   }
 
   bounds_viol_ = calc_bound_violation(z_, lb, ub);
-  fricion_cone_viol_ = calc_friction_cone_violation(
+  friction_cone_viol_ = calc_friction_cone_violation(
       z_.segment(lambda_c_start_, nc_), friction_coeffs);
 
   if (options_.polish and not equality_constrained) {
@@ -186,7 +188,7 @@ void FCCQP::Solve(
 
   // recalculate bounds violations after polishing
   bounds_viol_ = calc_bound_violation(z_, lb, ub);
-  fricion_cone_viol_ = calc_friction_cone_violation(
+  friction_cone_viol_ = calc_friction_cone_violation(
       z_.segment(lambda_c_start_, nc_), friction_coeffs);
 
   auto end = std::chrono::high_resolution_clock::now();
@@ -198,7 +200,7 @@ void FCCQP::Polish(const Ref<const VectorXd> &b, const Ref<const VectorXd> &b_eq
                    const vector<double> &friction_coeffs,
                    const Ref<const VectorXd> &lb, const Ref<const VectorXd> &ub) {
 
-  if (fricion_cone_viol_ < options_.eps_fcone and bounds_viol_ < options_.eps_bound) {
+  if (friction_cone_viol_ < options_.eps_fcone and bounds_viol_ < options_.eps_bound) {
     return;
   }
 
@@ -217,12 +219,11 @@ void FCCQP::Polish(const Ref<const VectorXd> &b, const Ref<const VectorXd> &b_eq
   MatrixXd M = MatrixXd::Zero(n + n_fc + n_b, n + n_fc + n_b);
 
   M.topLeftCorner(n, n) = M_kkt_pre_;
-  M.topLeftCorner(n_vars_, n_vars_) +=
-      options_.delta_polish * MatrixXd::Identity(n_vars_, n_vars_);
 
   M.block(n, lambda_c_start_, A_fcone.rows(), A_fcone.cols()) = A_fcone;
   M.block(lambda_c_start_, n, A_fcone.cols(), A_fcone.rows()) =
       A_fcone.transpose();
+
   M.block(n + n_fc, 0, n_b, n_vars_) = A_b;
   M.block(0, n + n_fc, n_vars_, n_b) = A_b.transpose();
 
@@ -230,7 +231,20 @@ void FCCQP::Polish(const Ref<const VectorXd> &b, const Ref<const VectorXd> &b_eq
   b_kkt_ext.head(n_vars_) = -b;
   b_kkt_ext.segment(n_vars_, n_eq_) = b_eq;
   b_kkt_ext.tail(n_b) = b_b;
-  z_ = M.ldlt().solve(b_kkt_ext).head(n_vars_);
+
+  MatrixXd Mp = M;
+  Mp.topLeftCorner(n_vars_, n_vars_) +=
+      options_.delta_polish * MatrixXd::Identity(n_vars_, n_vars_);
+
+  Eigen::LDLT<MatrixXd> Mp_sol = Mp.ldlt();
+  VectorXd z = Mp_sol.solve(b_kkt_ext);
+
+  for (int i = 0; i < 5; ++i) {
+    VectorXd dz = Mp_sol.solve(b_kkt_ext - M * z);
+    z = z + dz;
+  }
+
+  z_ = z.head(n_vars_); // M.ldlt().solve(b_kkt_ext).head(n_vars_);
 }
 
 FCCQPSolution FCCQP::GetSolution() const {
@@ -238,7 +252,7 @@ FCCQPSolution FCCQP::GetSolution() const {
   out.details.admm_residual_bounds = z_res_norm_;
   out.details.admm_residual_friction_cone = lambda_c_res_norm_;
   out.details.bounds_viol = bounds_viol_;
-  out.details.friction_cone_viol = fricion_cone_viol_;
+  out.details.friction_cone_viol = friction_cone_viol_;
   out.details.solve_time = solve_time_;
   out.details.factorization_time = factorization_time_;
   out.details.n_iter = n_iter_;

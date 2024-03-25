@@ -36,7 +36,11 @@ static Eigen::VectorXd project_to_friction_cone(
 }
 
 static Eigen::MatrixX3d get_active_ray_constraint_matrix(const Eigen::Vector3d &f, double mu) {
-  Eigen::Vector3d cone_ray = project_to_friction_cone(f, mu).normalized();
+  Eigen::Vector3d cone_ray = project_to_friction_cone(f, mu);
+  if (cone_ray.norm() == 0) {
+    return Eigen::MatrixX3d::Identity(3,3);
+  }
+  cone_ray.normalize();
   Eigen::MatrixX3d M = Eigen::MatrixX3d::Zero(2, 3);
   M.row(0)(0) = cone_ray(1);
   M.row(0)(1) = -cone_ray(0);
@@ -47,7 +51,7 @@ static Eigen::MatrixX3d get_active_ray_constraint_matrix(const Eigen::Vector3d &
 
 static Eigen::VectorXd project_to_bounds(
     const Eigen::VectorXd &x, const Eigen::VectorXd &lb, const Eigen::VectorXd &ub) {
-  Eigen::VectorXd out(x.rows());
+  Eigen::VectorXd out = x;
   for (int i = 0; i < x.rows(); ++i) {
     out(i) = std::max(std::min(x(i), ub(i)), lb(i));
   }
@@ -87,13 +91,17 @@ static Eigen::MatrixXd get_active_set_friction_constraint(
   std::vector<int> active_indices = guess_active_friction_cone_constraints(
       f, friction_coeffs);
 
-  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(2 * active_indices.size(), f.rows());
-  for (int i = 0; i < active_indices.size(); ++i) {
-    int idx = active_indices.at(i);
-    A.block<2, 3>(i * 2, idx * 3) = get_active_ray_constraint_matrix(
-        f.segment<3>(idx * 3),
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(0, f.rows());
+  for (int idx : active_indices) {
+    int start_row = A.rows();
+    Eigen::Vector3d lambda = f.segment<3>(idx * 3);
+    Eigen::Matrix3Xd M = get_active_ray_constraint_matrix(
+        lambda,
         friction_coeffs.at(idx)
     );
+    A.conservativeResize(A.rows() + M.rows(), Eigen::NoChange);
+    A.bottomRows(M.rows()).setZero();
+    A.block(start_row, 3*idx, M.rows(), M.cols()) = M;
   }
   return A;
 }
@@ -112,11 +120,9 @@ static std::pair<Eigen::MatrixXd, Eigen::VectorXd>
 get_active_set_bounds_constraint(const Eigen::VectorXd& x,
                                  const Eigen::VectorXd& lb,
                                  const Eigen::VectorXd& ub) {
-  std::vector<int> indices_viol;
-  std::vector<double> bounds_viol;
+  std::vector<int> indices_viol{};
+  std::vector<double> bounds_viol{};
 
-  indices_viol.clear();
-  bounds_viol.clear();
   for (int i = 0; i < x.rows(); ++i) {
     if (x(i) < lb(i)) {
       indices_viol.push_back(i);

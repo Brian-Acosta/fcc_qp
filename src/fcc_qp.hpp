@@ -49,7 +49,6 @@ class FCCQP {
   void set_rho(double rho) {
     assert(rho > 0);
     options_.rho = rho;
-    P_rho_ = rho * MatrixXd::Identity(n_vars_, n_vars_);
   }
 
   void set_max_iter(int n) {
@@ -134,7 +133,7 @@ class FCCQP {
   double z_res_norm_{};
   double lambda_c_res_norm_{};
   double bounds_viol_{};
-  double fricion_cone_viol_{};
+  double friction_cone_viol_{};
 
   // solve info
   int n_iter_{};
