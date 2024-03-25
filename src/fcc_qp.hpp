@@ -29,7 +29,7 @@ struct FCCQPDetails {
 
 struct FCCQPOptions {
   int max_iter = 1000;
-  bool polish = true;
+  bool polish = false;
   double rho = 1e-6;
   double eps_fcone = 1e-3;
   double eps_bound = 1e-6;
