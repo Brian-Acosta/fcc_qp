@@ -180,9 +180,15 @@ void FCCQP::Solve(
   fricion_cone_viol_ = calc_friction_cone_violation(
       z_.segment(lambda_c_start_, nc_), friction_coeffs);
 
-  if (options_.polish) {
+  if (options_.polish and not equality_constrained) {
     Polish(b, b_eq, friction_coeffs, lb, ub);
   }
+
+  // recalculate bounds violations after polishing
+  bounds_viol_ = calc_bound_violation(z_, lb, ub);
+  fricion_cone_viol_ = calc_friction_cone_violation(
+      z_.segment(lambda_c_start_, nc_), friction_coeffs);
+
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> solve_time = end - start;
   solve_time_ = solve_time.count();
