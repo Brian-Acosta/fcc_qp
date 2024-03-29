@@ -146,10 +146,10 @@ class FCCQP {
 
   // Variables
   VectorXd kkt_sol_;      // primal and equality duals from stage 1 primal solve
-  VectorXd z_;            // stacked variables z = [dv, u, lambda_h, lambda_c]
-  VectorXd z_bar_;        // ADMM copy of z
+  VectorXd x_;            // stacked decision variables
+  VectorXd x_bar_;        // ADMM copy of x
   VectorXd lambda_c_bar_; // ADMM copy of lambda_c
-  VectorXd mu_z_;         // Dual for z = z_bar constraint
+  VectorXd mu_x_;         // Dual for x = x_bar constraint
   VectorXd mu_lambda_c_;  // Dual for lambda_c = lambda_c_bar constraint
 
   // Decompositions
@@ -158,9 +158,9 @@ class FCCQP {
   Eigen::CompleteOrthogonalDecomposition<MatrixXd> M_kkt_pre_factorization_backup_;
 
   // residuals
-  VectorXd z_res_;
+  VectorXd x_res_;
   VectorXd lambda_c_res_;
-  double z_res_norm_{};
+  double x_res_norm_{};
   double lambda_c_res_norm_{};
   double bounds_viol_{};
   double friction_cone_viol_{};
