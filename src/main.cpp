@@ -31,11 +31,9 @@ PYBIND11_MODULE(fcc_qp_solver, m) {
     py::class_<FCCQPOptions>(m, "FCCQPOptions")
         .def(py::init<>())
         .def_readwrite("max_iter", &FCCQPOptions::max_iter)
-        .def_readwrite("polish", &FCCQPOptions::polish)
         .def_readwrite("rho", &FCCQPOptions::rho)
         .def_readwrite("eps_fcone", &FCCQPOptions::eps_fcone)
-        .def_readwrite("eps_bound", &FCCQPOptions::eps_bound)
-        .def_readwrite("delta_polish", &FCCQPOptions::delta_polish);
+        .def_readwrite("eps_bound", &FCCQPOptions::eps_bound);
 
     py::class_<FCCQPSolution>(m, "FCCQPSolution")
         .def_readwrite("details", &FCCQPSolution::details)

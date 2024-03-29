@@ -29,11 +29,9 @@ struct FCCQPDetails {
 
 struct FCCQPOptions {
   int max_iter = 1000;
-  bool polish = false;
   double rho = 1e-6;
   double eps_fcone = 1e-3;
   double eps_bound = 1e-6;
-  double delta_polish = 1e-10;
 };
 
 struct FCCQPSolution {
@@ -41,9 +39,37 @@ struct FCCQPSolution {
   VectorXd z;
 };
 
+
+/*!
+  * FCCQP is a solver for the following convex LCQP, where Q is positive
+  * semi-definite, and F is the set of friction cone constraints applied to a
+  * subset of the decision variables.
+  *
+  * minimize     (1/2)xᵀQx + bᵀx
+  * subject to   A_eq x = b_eq
+  *              lb ≤ x ≤ ub
+  *              x ∈ F
+  *
+  */
 class FCCQP {
  public:
 
+  /*!
+   * Constructor for the QP solver
+   * @param num_vars the total number of decision variables for the QP(s)
+   * you will be solving
+   * @param num_equality_constraints number of rows in A_eq
+   * @param nc number of decision variables representing contact forces.
+   * must be a multiple of 3.
+   * @param lambda_c_start the index of the first contact force variable within
+   * the vector of decision variables.
+   *
+   * Notice that the contact force variables are assumed to be in a contiguous
+   * segment. In Eigen, this looks like
+   *
+   *   stacked_contact_forces = x.segment(lambda_c_start, nc)
+   *
+   */
   FCCQP(int num_vars, int num_equality_constraints, int nc, int lambda_c_start);
 
   void set_rho(double rho) {
@@ -64,19 +90,27 @@ class FCCQP {
     warm_start_ = warm_start;
   }
 
-  /*!
-   * Solves the QP associated with the problem data
-   * @param A_eq linear equality constraints including dynamics,
-   * holonomic, and contact constraints
-   * @param Q hessian of the cost on the stacked decision variables
-   * @param q linear term of the cost on the stacked decision variables
-   * @param friction_coeffs friction coefficients for the contact forces
-   * @param lb lower bounds on the variables. must be -infinity for contact
-   * force variables (friction cone constraint wil enforce positivity of
-   * normal component)
-   * @param ub upper bounds on the variables. Must be infinity for contact
-   * forces.
-   */
+ /*!
+  *
+  * Solves the QP for the given problem data
+  *
+  * @param A_eq linear equality constraints including dynamics,
+  * holonomic, and contact constraints
+  * @param Q hessian of the cost on the stacked decision variables
+  * @param q linear term of the cost on the stacked decision variables
+  * @param friction_coeffs friction coefficients for the contact forces
+  * @param lb lower bounds on the variables. must be -infinity for contact
+  * force variables (friction cone constraint wil enforce non-negativity of
+  * the normal component)
+  * @param ub upper bounds on the variables. Must be infinity for contact
+  * forces.
+  *
+  * N.B. We have only tested for numerical stability of the solver when A_eq
+  * is full row-rank, which is the case for our application. You may need to
+  * switch the KKT factorization to a rank-revealing linear solver
+  * (i.e. CompleteOrthogonalDecomposition) for low-rank A_eq.
+  *
+  */
   void Solve(const Ref<const MatrixXd>& Q, const Ref<const VectorXd>& b,
              const Ref<const MatrixXd>& A_eq, const Ref<const VectorXd>& b_eq,
              const vector<double>& friction_coeffs,
@@ -91,10 +125,6 @@ class FCCQP {
   void DoADMM(const Ref<const VectorXd>& b,
               const vector<double>& friction_coeffs,
               const Ref<const VectorXd>& lb, const Ref<const VectorXd>& ub);
-
-  void Polish(const Ref<const VectorXd>& b, const Ref<const VectorXd>& b_eq,
-              const vector<double>& friction_coeffs, const Ref<const VectorXd>& lb,
-              const Ref<const VectorXd>& ub);
 
 
   FCCQPOptions options_;

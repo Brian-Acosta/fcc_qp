@@ -70,22 +70,16 @@ def make_plots(results):
 
 
 def main():
-    np.set_printoptions(threshold=sys.maxsize, precision=1)
-
-    dataset = 'walking_reg'
-    nvar = 60 if dataset == 'walking_reg' else 50
-
+    dataset = 'walking'
     qps = load_qp_matrices(dataset)
 
     # Dimensions of Cassie OSC problem
-    solver = FCCQP(nvar, 38, 12, 38)
+    solver = FCCQP(60, 38, 12, 38)
     options = FCCQPOptions()
     options.rho = 5e-5
     options.eps_fcone = 1e-6
     options.eps_bound = 1e-6
-    options.delta_polish = 1e-10
     options.max_iter = 100
-    options.polish = False
     solver.set_options(options)
 
     results = []
