@@ -7,6 +7,6 @@ Installing for use with dairlib:
 cd ~/workspace
 mkdir sandbox && cd sandbox
 git clone git@github.com:Brian-Acosta/fcc_qp.git
-cd fcc_qp.git 
+cd fcc_qp
 git submodule update --init --recursive
 ```
