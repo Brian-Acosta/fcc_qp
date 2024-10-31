@@ -180,6 +180,7 @@ void FCCQP::Solve(
   }
 
   if (not equality_constrained) {
+    std::cout << "running admm\n";
     DoADMM(b, friction_coeffs, lb, ub);
   }
 
