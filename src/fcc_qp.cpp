@@ -164,7 +164,6 @@ void FCCQP::Solve(
     // use a more robust solver
     if (M_kkt_pre_factorization_.info() != Eigen::Success) {
       M_kkt_pre_factorization_backup_.compute(M_kkt_pre_);
-      std::cout << "ldlt failed\n";
     }
 
     auto fact_end = std::chrono::high_resolution_clock::now();
@@ -180,7 +179,6 @@ void FCCQP::Solve(
   }
 
   if (not equality_constrained) {
-    std::cout << "running admm\n";
     DoADMM(b, friction_coeffs, lb, ub);
   }
 
