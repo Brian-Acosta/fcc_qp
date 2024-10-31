@@ -162,8 +162,7 @@ void FCCQP::Solve(
 
     // For equality constrained QPs or if the cost is not positive definite,
     // use a more robust solver
-    if (M_kkt_pre_factorization_.info() != Eigen::Success or
-        equality_constrained) {
+    if (M_kkt_pre_factorization_.info() != Eigen::Success) {
       M_kkt_pre_factorization_backup_.compute(M_kkt_pre_);
     }
 
@@ -172,8 +171,7 @@ void FCCQP::Solve(
     factorization_time_ += fact_time.count();
 
     // Get initial guess by solving equality constrained QP
-    if (M_kkt_pre_factorization_.info() == Eigen::Success and not
-        equality_constrained) {
+    if (M_kkt_pre_factorization_.info() == Eigen::Success) {
       x_ = M_kkt_pre_factorization_.solve(b_kkt_).head(n_vars_);
     } else {
       x_ = M_kkt_pre_factorization_backup_.solve(b_kkt_).head(n_vars_);
