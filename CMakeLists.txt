@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(fcc_qp_solver VERSION 0.1.0)
 if (APPLE)
 set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++")
@@ -17,6 +17,7 @@ include(CPack)
 
 set(SRCS
     ${SOURCE_DIR}/fcc_qp.cpp
+    ${SOURCE_DIR}/constraint_utils.cpp
 )
 
 set(HEADERS

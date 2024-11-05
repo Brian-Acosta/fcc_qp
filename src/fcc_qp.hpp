@@ -41,7 +41,7 @@ struct FCCQPSolution {
 
 
 /*!
-  * FCCQP is a solver for the following convex LCQP, where Q is positive
+  * FCCQP is a solver for the following convex SOCP, where Q is positive
   * semi-definite, and F is the set of friction cone constraints applied to a
   * subset of the decision variables.
   *

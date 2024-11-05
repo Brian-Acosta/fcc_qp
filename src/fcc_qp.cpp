@@ -160,8 +160,7 @@ void FCCQP::Solve(
     auto fact_start = std::chrono::high_resolution_clock::now();
     M_kkt_pre_factorization_.compute(M_kkt_pre_);
 
-    // For equality constrained QPs or if the cost is not positive definite,
-    // use a more robust solver
+    // If the cost is not positive definite, use a more robust solver
     if (M_kkt_pre_factorization_.info() != Eigen::Success) {
       M_kkt_pre_factorization_backup_.compute(M_kkt_pre_);
     }
