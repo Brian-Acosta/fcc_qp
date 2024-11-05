@@ -17,9 +17,10 @@ double calc_friction_cone_violation(
     const Eigen::VectorXd &f, const std::vector<double> &friction_coeffs);
 
 double calc_bound_violation(
-    const VectorXd& x, const VectorXd& lb, const VectorXd& ub);
+    const Eigen::VectorXd& x, const Eigen::VectorXd& lb,
+    const Eigen::VectorXd& ub);
 
 bool validate_bounds(
-    const Eigen::VectorXd& lb, const VectorXd& ub);
+    const Eigen::VectorXd& lb, const Eigen::VectorXd& ub);
 
 }

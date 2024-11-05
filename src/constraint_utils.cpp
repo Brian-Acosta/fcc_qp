@@ -59,12 +59,13 @@ double calc_friction_cone_violation(
 }
 
 double calc_bound_violation(
-    const VectorXd &x, const VectorXd &lb, const VectorXd &ub) {
+    const Eigen::VectorXd &x, const Eigen::VectorXd &lb,
+    const Eigen::VectorXd &ub) {
   return (x - project_to_bounds(x, lb, ub)).norm();
 }
 
 bool validate_bounds(
-    const Eigen::VectorXd &lb, const VectorXd &ub) {
+    const Eigen::VectorXd &lb, const Eigen::VectorXd &ub) {
   for (int i = 0; i < lb.rows(); ++i) {
     if (lb(i) > ub(i)) {
       return false;
